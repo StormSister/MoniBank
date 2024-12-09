@@ -1,10 +1,12 @@
 package com.monika.accounts.mapper;
 
-
 import com.monika.accounts.dto.AccountsDto;
 import com.monika.accounts.entity.Accounts;
 
-public class AccountsMapper {
+
+
+
+    public class AccountsMapper {
 
         public static AccountsDto mapToAccountsDto(Accounts accounts, AccountsDto accountsDto) {
             accountsDto.setAccountNumber(accounts.getAccountNumber());
