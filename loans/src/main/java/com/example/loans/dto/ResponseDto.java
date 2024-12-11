@@ -1,14 +1,14 @@
 package com.example.loans.dto;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 @Schema(
         name = "Response",
         description = "Schema to hold successful response information"
 )
-@Setter @Getter @ToString @AllArgsConstructor @NoArgsConstructor
+@Data @AllArgsConstructor
 public class ResponseDto {
 
     @Schema(
