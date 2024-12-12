@@ -1,2 +1,36 @@
-package com.example.cards.entity;public class Cards {
+package com.example.cards.entity;
+
+import jakarta.persistence.Entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+
+@Entity
+@Getter @Setter @ToString @AllArgsConstructor
+public class Cards extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long cardId;
+
+    private String mobileNumber;
+
+    private String cardNumber;
+
+    private String cardType;
+
+    private int totalLimit;
+
+    private int amountUsed;
+
+    private int availableAmount;
+
+    public Cards() {
+
+    }
+
+
 }
