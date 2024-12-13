@@ -11,6 +11,7 @@
 	<groupId>com.monika</groupId>
 	<artifactId>accounts</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
 	<name>accounts</name>
 	<description>Accounts microservice for MoniBank</description>
 	<url/>
