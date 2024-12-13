@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,15 +24,20 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(path = "/api", produces = {MediaType.APPLICATION_JSON_VALUE})
-@AllArgsConstructor
 @Validated
-@Tag(name = "CRUD REST APIs for Accounts in Monibank",
-        description = "CRUD REST APIs in Monibank to CREATE, UPDATE, FETCH and DELETE account details")
+@Tag(name = "CRUD REST APIs for Accounts in MoniBank",
+        description = "CRUD REST APIs in MoniBank to CREATE, UPDATE, FETCH and DELETE account details")
 public class AccountsController {
+
+    @Value("${build.version}")
+    private String buildVersion;
 
     private IAccountsService iAccountsService;
 
-
+    @Autowired
+    public AccountsController(IAccountsService iAccountsService) {
+        this.iAccountsService = iAccountsService;
+    }
 
     @Operation(
             summary = "Create a new account",
@@ -79,7 +86,7 @@ public class AccountsController {
     }
     )
     @GetMapping("/fetch")
-    public ResponseEntity<CustomerDto> fetchAccountDetails(@RequestParam @Pattern(regexp= ("^[0-9]{10}$"), message = "Mobile number should be 10 digits and should not contain any special characters such as ^$|]") String mobileNumber){
+    public ResponseEntity<CustomerDto> fetchAccountDetails(@RequestParam @Pattern(regexp = ("^[0-9]{10}$"), message = "Mobile number should be 10 digits and should not contain any special characters such as ^$|]") String mobileNumber) {
         CustomerDto customerDto = iAccountsService.fetchAccount(mobileNumber);
         return ResponseEntity.status(HttpStatus.OK).body(customerDto);
     }
@@ -109,11 +116,11 @@ public class AccountsController {
     @PutMapping("/update")
     public ResponseEntity<ResponseDto> updateAccountDetails(@Valid @RequestBody CustomerDto customerDto) {
         boolean isUpdated = iAccountsService.updateAccount(customerDto);
-        if(isUpdated) {
+        if (isUpdated) {
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(new ResponseDto(AccountsConstants.STATUS_200, AccountsConstants.MESSAGE_200));
-        }else{
+        } else {
             return ResponseEntity
                     .status(HttpStatus.EXPECTATION_FAILED)
                     .body(new ResponseDto(AccountsConstants.STATUS_417, AccountsConstants.MESSAGE_417_UPDATE));
@@ -143,18 +150,42 @@ public class AccountsController {
     }
     )
     @DeleteMapping("/delete")
-    public ResponseEntity<ResponseDto> deleteAccount(@RequestParam @Pattern(regexp= ("^[0-9]{10}$"), message = "Mobile number should be 10 digits and should not contain any special characters such as ^$|") String mobileNumber) {
+    public ResponseEntity<ResponseDto> deleteAccount(@RequestParam @Pattern(regexp = ("^[0-9]{10}$"), message = "Mobile number should be 10 digits and should not contain any special characters such as ^$|") String mobileNumber) {
         boolean isDeleted = iAccountsService.deleteAccount(mobileNumber);
-        if(isDeleted) {
+        if (isDeleted) {
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(new ResponseDto(AccountsConstants.STATUS_200, AccountsConstants.MESSAGE_200));
-        }else{
+        } else {
             return ResponseEntity
                     .status(HttpStatus.EXPECTATION_FAILED)
                     .body(new ResponseDto(AccountsConstants.STATUS_417, AccountsConstants.MESSAGE_417_DELETE));
         }
     }
 
-
+    @Operation(
+            summary = "Get Build information",
+            description = "Get build information that is deployed into accounts microservice"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "HTTP Status OK"
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "HTTP Status Internal Server Error",
+                    content = @Content(
+                            schema = @Schema(implementation = ErrorResponseDto.class)
+                    )
+            )
     }
+    )
+    @GetMapping("/build-info")
+    public ResponseEntity<String> getBuildInfo() {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(buildVersion);
+    }
+
+
+}
