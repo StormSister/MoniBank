@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -9,11 +9,11 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.monika</groupId>
-	<artifactId>cards</artifactId>
+	<artifactId>accounts</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>cards</name>
-	<description>Cards microservice for MoniBank</description>
+	<name>accounts</name>
+	<description>Accounts microservice for MoniBank</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -80,17 +80,6 @@
 			<artifactId>spring-cloud-starter-config</artifactId>
 		</dependency>
 	</dependencies>
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 
 	<build>
@@ -113,7 +102,7 @@
 				<version>3.4.2</version>
 				<configuration>
 					<to>
-						<image>stormsister/${project.artifactId}:s4</image>
+						<image>stormsister/${project.artifactId}:s6</image>
 					</to>
 				</configuration>
 			</plugin>

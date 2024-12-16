@@ -1,6 +1,10 @@
 server:
-  port: 8090
+  port: 9000
 spring:
+  application:
+    name: "loans"
+  profiles:
+    active: "prod"
   datasource:
     url: jdbc:h2:mem:testdb
     driverClassName: org.h2.Driver
@@ -15,21 +19,4 @@ spring:
       ddl-auto: update
     show-sql: true
   config:
-    import:
-      - "application_qa.yml"
-      - "application_prod.yml"
-  profiles:
-    active:
-      - "qa"
-
-build:
-  version: "3.0"
-
-loans:
-  message: "Welcome to MoniBank loans related local APIs "
-  contactDetails:
-    name: "Amaal Grega - Developer"
-    email: "amaal@monibank.com"
-  onCallSupport:
-    - (452) 456-2176
-    - (546) 764-8934
+    import: "optional:configserver:http://localhost:8071/"
