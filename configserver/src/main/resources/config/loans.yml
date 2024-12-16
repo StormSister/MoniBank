@@ -1,0 +1,13 @@
+
+
+build:
+  version: "3.0"
+
+loans:
+  message: "Welcome to MoniBank loans related local APIs "
+  contactDetails:
+    name: "Amaal Grega - Developer"
+    email: "amaal@monibank.com"
+  onCallSupport:
+    - (452) 456-2176
+    - (546) 764-8934

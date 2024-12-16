@@ -1,2 +1,14 @@
+spring:
+  application:
+    name: "configserver"
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          rearch-locations: "classpath:/config"
+
+
 server:
   port: 8071

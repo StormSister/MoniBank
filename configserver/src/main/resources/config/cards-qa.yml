@@ -1,0 +1,11 @@
+build:
+  version: "2.0"
+
+cards:
+  message: "Welcome to MoniBank cards related QA APIs "
+  contactDetails:
+    name: "Cherryl Pankaj - QA Lead"
+    email: "cherryl@monibank.com"
+  onCallSupport:
+    - (310) 875-4367
+    - (201) 236-1267

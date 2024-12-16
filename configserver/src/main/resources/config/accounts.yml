@@ -1,0 +1,13 @@
+build:
+  version: "3.0"
+
+accounts:
+  message: "Welcome to MoniBank accounts related local APIs"
+  contactDetails:
+    name: "Monika - Developer"
+    email: "moni@monibank.com"
+  onCallSupport:
+    -(555)555-1234
+    -(555)555-1235
+
+
