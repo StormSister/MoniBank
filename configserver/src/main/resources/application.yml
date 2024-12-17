@@ -2,14 +2,23 @@ spring:
   application:
     name: "configserver"
   profiles:
-    active: native
+#    active: native
+   active: git
   cloud:
     config:
       server:
-        native:
-#          search-locations: "classpath:/config"
-          search-locations: "file:///C:/Users/momika/Documents/config"
+        git:
+          uri: "https://github.com/StormSister/Monibank-config.git"
+          default-label: main
+          timeout: 5
+          clone-on-start: true
+          force-pull: true
 
+#        native:
+#         search-locations: "classpath:/config"
+#          search-locations: "file:///C:/Users/momika/Documents/config"
+encrypt:
+  key: "45D81EC1EF61DF9AD8D3E5BB397F9"
 
 server:
   port: 8071
