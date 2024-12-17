@@ -1,8 +1,6 @@
-server:
-  port: 9000
 spring:
   application:
-    name: "cards"
+    name: "accounts"
   profiles:
     active: "prod"
   datasource:
@@ -18,8 +16,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
-  config:
-    import: "optional:configserver:http://localhost:8071/"
+  cloud:
+    config:
+      import: "optional:configserver:http://localhost:8071/"
 
 management:
   endpoints:
