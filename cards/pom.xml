@@ -117,7 +117,7 @@
 				<version>3.4.2</version>
 				<configuration>
 					<to>
-						<image>stormsister/${project.artifactId}:s4</image>
+						<image>stormsister/${project.artifactId}:s6</image>
 					</to>
 				</configuration>
 			</plugin>

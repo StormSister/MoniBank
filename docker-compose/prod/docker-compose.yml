@@ -3,34 +3,36 @@ services:
     image: rabbitmq:management
     hostname: rabbitmq
     ports:
-      - "15672:15672"
       - "5672:5672"
+      - "15672:15672"
     healthcheck:
       test: rabbitmq-diagnostics check_port_connectivity
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 10s
-
+      start_period: 5s
+    extends:
+      file: common-config.yml
+      service: network-deploy-service
 
   configserver:
     image: "stormsister/configserver:s6"
     container_name: configserver-ms
     ports:
       - "8071:8071"
-    
+    depends_on:
+      rabbit:
+        condition: service_healthy
     healthcheck:
-      test: "curl --fail http://localhost:8071/actuator/health | grep UP || exit 1"
+      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 10s
-    deploy:
-      resources:
-        limits:
-          memory: 700m
-    networks:
-      - monibank
+    extends:
+      file: common-config.yml
+      service: microservice-base-config
+
   accounts:
     image: "stormsister/accounts:s6"
     container_name: accounts-ms
@@ -39,16 +41,12 @@ services:
     depends_on:
       configserver:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 700m
-    networks:
-      - monibank
     environment:
-      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
-      SPRING_PROFILE_ACTIVE: default
       SPRING_APPLICATION_NAME: "accounts"
+    extends:
+      file: common-config.yml
+      service: microservice-configserver-config
+
   loans:
     image: "stormsister/loans:s6"
     container_name: loans-ms
@@ -57,16 +55,12 @@ services:
     depends_on:
       configserver:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 700m
-    networks:
-      - monibank
     environment:
-      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
-      SPRING_PROFILE_ACTIVE: default
       SPRING_APPLICATION_NAME: "loans"
+    extends:
+      file: common-config.yml
+      service: microservice-configserver-config
+
   cards:
     image: "stormsister/cards:s6"
     container_name: cards-ms
@@ -75,16 +69,12 @@ services:
     depends_on:
       configserver:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 700m
-    networks:
-      - monibank
     environment:
-      SPRING_CONFIG_IMPORT: "configserver:http://configserver:8071/"
-      SPRING_PROFILE_ACTIVE: default
       SPRING_APPLICATION_NAME: "cards"
+    extends:
+      file: common-config.yml
+      service: microservice-configserver-config
+
 networks:
-  monibank:
+  eazybank:
     driver: "bridge"
