@@ -103,7 +103,7 @@
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
 					<image>
-						<name>stormsister/${project.artifactId}:s6</name>
+						<name>stormsister/${project.artifactId}:s7</name>
 					</image>
 					<excludes>
 						<exclude>
