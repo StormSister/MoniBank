@@ -1,7 +1,52 @@
-
-
-
 services:
+  accountsdb:
+    container_name: accountsdb
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "accountsdb"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monibank
+
+  cardsdb:
+    container_name: cardsdb
+    image: mysql:latest
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "cardsdb"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monibank
+
+  loansdb:
+    container_name: loansdb
+    image: mysql:latest
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "loansdb"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - monibank
+
   rabbit:
     image: rabbitmq:management
     hostname: rabbitmq
@@ -9,17 +54,15 @@ services:
       - "5672:5672"
       - "15672:15672"
     healthcheck:
-      test: rabbitmq-diagnostics check_port_connectivity
+      test: ["CMD-SHELL", "rabbitmq-diagnostics check_port_connectivity"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 5s
-    extends:
-      file: common-config.yml
-      service: network-deploy-service
+      retries: 5
+    networks:
+      - monibank
 
   configserver:
-    image: "stormsister/configserver:s6"
+    image: "stormsister/configserver:s7"
     container_name: configserver-ms
     ports:
       - "8071:8071"
@@ -27,57 +70,67 @@ services:
       rabbit:
         condition: service_healthy
     healthcheck:
-      test: "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"
+      test: ["CMD-SHELL", "curl --fail --silent localhost:8071/actuator/health/readiness | grep UP || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 10s
-    extends:
-      file: common-config.yml
-      service: microservice-base-config
+      retries: 5
+    networks:
+      - monibank
 
   accounts:
-    image: "stormsister/accounts:s6"
+    image: "stormsister/accounts:s7"
     container_name: accounts-ms
     ports:
       - "8080:8080"
     depends_on:
       configserver:
         condition: service_healthy
+      accountsdb:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "accounts"
-    extends:
-      file: common-config.yml
-      service: microservice-configserver-config
+      SPRING_DATASOURCE_URL: "jdbc:mysql://accountsdb:3306/accountsdb"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+    networks:
+      - monibank
 
   loans:
-    image: "stormsister/loans:s6"
+    image: "stormsister/loans:s7"
     container_name: loans-ms
     ports:
       - "8090:8090"
     depends_on:
       configserver:
         condition: service_healthy
+      loansdb:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "loans"
-    extends:
-      file: common-config.yml
-      service: microservice-configserver-config
+      SPRING_DATASOURCE_URL: "jdbc:mysql://loansdb:3306/loansdb"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+    networks:
+      - monibank
 
   cards:
-    image: "stormsister/cards:s6"
+    image: "stormsister/cards:s7"
     container_name: cards-ms
     ports:
       - "9000:9000"
     depends_on:
       configserver:
         condition: service_healthy
+      cardsdb:
+        condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: "cards"
-    extends:
-      file: common-config.yml
-      service: microservice-configserver-config
+      SPRING_DATASOURCE_URL: "jdbc:mysql://cardsdb:3306/cardsdb"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+    networks:
+      - monibank
 
 networks:
   monibank:
-    driver: "bridge"
+    driver: bridge
