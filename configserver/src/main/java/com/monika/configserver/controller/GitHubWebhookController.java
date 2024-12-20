@@ -20,15 +20,9 @@ public class GitHubWebhookController {
     @PostMapping("/monitor")
     public ResponseEntity<Void> triggerRefresh() {
         String busRefreshUrl = "http://localhost:8080/actuator/busrefresh";
-
-        // Ustawienie nagłówka 'Content-Type' na 'application/json'
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
-
-        // Tworzymy HttpEntity z nagłówkami, ale bez ciała
         HttpEntity<String> entity = new HttpEntity<>(null, headers);
-
-        // Wysyłamy zapytanie POST bez ciała
         restTemplate.exchange(busRefreshUrl, HttpMethod.POST, entity, Void.class);
 
         return ResponseEntity.ok().build();
