@@ -193,17 +193,12 @@ public class HerculesMainframeResultStore
 
             /*
              * Interesują nas WYŁĄCZNIE rekordy
-             * naszego protokołu Monibank.
+             * protokołu Monibank.
              */
-            if (!normalized.startsWith("MBR|")) {
+            if (!normalized.startsWith("MBR;")) {
                 continue;
             }
 
-            /*
-             * Dataset ma LRECL=160.
-             * Jeśli spool zachował trailing spaces,
-             * zostawiamy maksymalnie 160 znaków.
-             */
             if (normalized.length() > RESULT_RECORD_LENGTH) {
                 normalized = normalized.substring(
                         0,
@@ -211,11 +206,6 @@ public class HerculesMainframeResultStore
                 );
             }
 
-            /*
-             * Jeśli trailing spaces zostały obcięte
-             * podczas odczytu spoolu, odbudowujemy
-             * rekord do 160 znaków.
-             */
             if (normalized.length() < RESULT_RECORD_LENGTH) {
                 normalized =
                         normalized
@@ -229,6 +219,7 @@ public class HerculesMainframeResultStore
         }
 
         if (result.isEmpty()) {
+
             System.out.println(
                     "=== NO MONIBANK RESULT RECORDS FOUND ==="
             );

@@ -9,10 +9,14 @@ public record MainframeProperties(
         int readerPort,
         int consolePort,
         int httpPort,
+        int resultPort,
         String logHost,
         String logUser,
         String logPath,
         String jobUser,
-        String jobPassword
+        String jobPassword,
+
+        String resultHost
+
 ) {
 }

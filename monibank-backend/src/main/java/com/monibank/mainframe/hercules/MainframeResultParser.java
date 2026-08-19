@@ -11,6 +11,9 @@ import java.util.List;
 @Component
 public class MainframeResultParser {
 
+    private static final String PREFIX = "MBR;";
+    private static final String SEPARATOR = ";";
+
     public MainframeResult parse(List<String> records) {
 
         if (records == null || records.isEmpty()) {
@@ -20,30 +23,35 @@ public class MainframeResultParser {
         }
 
         MainframeResultHeader header = null;
-        List<MainframeDataRecord> data = new ArrayList<>();
+        List<MainframeDataRecord> data =
+                new ArrayList<>();
 
         for (String rawRecord : records) {
 
-            if (rawRecord == null || rawRecord.isBlank()) {
+            if (rawRecord == null
+                    || rawRecord.isBlank()) {
                 continue;
             }
 
-            String record = rawRecord.trim();
+            String record =
+                    rawRecord.trim();
 
-            if (!record.startsWith("MBR|")) {
+            if (!record.startsWith(PREFIX)) {
                 continue;
             }
 
             String[] parts =
-                    record.split("\\|", -1);
+                    record.split(SEPARATOR, -1);
 
-            if (parts.length < 3) {
+            if (parts.length < 4) {
                 throw new IllegalArgumentException(
-                        "Invalid MBR record: " + record
+                        "Invalid MBR record: "
+                                + record
                 );
             }
 
-            String type = parts[1].trim();
+            String type =
+                    value(parts, 1);
 
             switch (type) {
 
@@ -55,7 +63,8 @@ public class MainframeResultParser {
                         );
                     }
 
-                    header = parseHeader(parts);
+                    header =
+                            parseHeader(parts);
                 }
 
                 case "D" ->
@@ -87,6 +96,18 @@ public class MainframeResultParser {
             String[] parts
     ) {
 
+        /*
+         * MBR;S;CHGCUST;Rxxxxxxx;CUSTOMER;STATUS;CODE
+         *
+         * 0 MBR
+         * 1 type
+         * 2 operation
+         * 3 requestId
+         * 4 entityId
+         * 5 status
+         * 6 code
+         */
+
         String type =
                 value(parts, 1);
 
@@ -94,13 +115,13 @@ public class MainframeResultParser {
                 value(parts, 2);
 
         String entityId =
-                value(parts, 3);
-
-        String status =
                 value(parts, 4);
 
-        String code =
+        String status =
                 value(parts, 5);
+
+        String code =
+                value(parts, 6);
 
         return new MainframeResultHeader(
                 type,
@@ -115,19 +136,30 @@ public class MainframeResultParser {
             String[] parts
     ) {
 
+        /*
+         * MBR;D;CUSTOMER;Rxxxxxxx;<payload...>
+         *
+         * requestId z indeksu 3 pomijamy,
+         * ponieważ służy listenerowi do routingu.
+         */
+
         String entityType =
                 value(parts, 2);
 
         StringBuilder payload =
                 new StringBuilder();
 
-        for (int i = 3; i < parts.length; i++) {
+        for (int i = 4;
+             i < parts.length;
+             i++) {
 
-            if (i > 3) {
-                payload.append("|");
+            if (i > 4) {
+                payload.append(SEPARATOR);
             }
 
-            payload.append(parts[i].trim());
+            payload.append(
+                    parts[i].trim()
+            );
         }
 
         return new MainframeDataRecord(

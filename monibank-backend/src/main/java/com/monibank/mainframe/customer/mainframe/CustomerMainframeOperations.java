@@ -31,7 +31,7 @@ public final class CustomerMainframeOperations {
                     "CHANGE_CUSTOMER_STATUS",
                     "CHGCUST",
                     "MBANK.CUST",
-                    14,
+                    22,
                     MainframeOperationType.UPDATE
             );
 }

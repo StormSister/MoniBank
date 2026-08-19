@@ -60,9 +60,17 @@ public class CustomerRecordMapper
     }
 
     public String toStatusUpdateRecord(
+            String requestId,
             String customerId,
             String status
     ) {
+
+        if (requestId == null
+                || requestId.length() != 8) {
+            throw new IllegalArgumentException(
+                    "Request ID must have exactly 8 characters"
+            );
+        }
 
         if (customerId == null
                 || customerId.length() != 13) {
@@ -78,6 +86,18 @@ public class CustomerRecordMapper
             );
         }
 
-        return customerId + status;
+        String record =
+                requestId
+                        + customerId
+                        + status;
+
+        if (record.length() != 22) {
+            throw new IllegalStateException(
+                    "Customer status update record must have length 22, got "
+                            + record.length()
+            );
+        }
+
+        return record;
     }
 }

@@ -124,34 +124,40 @@ public class MainframeBusinessJclFactory {
         validate(spec, inputRecord);
 
         return """
-            //%s JOB (TEST),'MONIBANK UPDATE',
-            //             CLASS=A,
-            //             MSGCLASS=A,
-            //             MSGLEVEL=(1,1),
-            //             USER=%s,
-            //             PASSWORD=%s
-            //UPDATE   EXEC PGM=%s
-            //STEPLIB  DD DSN=HERC01.TEST.LOADLIB,DISP=SHR
-            //INPUT    DD *
-            %s
-            /*
-            //CUSTFILE DD DSN=%s,
-            //            DISP=OLD,
-            //            AMP=('AMORG','RECFM=F')
-            //RESULT   DD DSN=%s,
-            //            DISP=(NEW,CATLG,DELETE),
-            //            UNIT=SYSDA,
-            //            SPACE=(TRK,(1,1)),
-            //            DCB=(RECFM=FB,LRECL=160,BLKSIZE=1600)
-            //SYSOUT   DD SYSOUT=*
-            //
-            """.formatted(
+        //%s JOB (TEST),'MONIBANK UPDATE',
+        //             CLASS=A,
+        //             MSGCLASS=A,
+        //             MSGLEVEL=(1,1),
+        //             USER=%s,
+        //             PASSWORD=%s
+        //UPDATE   EXEC PGM=%s
+        //STEPLIB  DD DSN=HERC01.TEST.LOADLIB,DISP=SHR
+        //INPUT    DD *
+        %s
+        /*
+        //CUSTFILE DD DSN=%s,
+        //            DISP=OLD,
+        //            AMP=('AMORG','RECFM=F')
+        //RESULT   DD DSN=%s,
+        //            DISP=(NEW,CATLG,DELETE),
+        //            UNIT=SYSDA,
+        //            SPACE=(TRK,(1,1)),
+        //            DCB=(RECFM=FB,LRECL=160,BLKSIZE=1600)
+        //SYSOUT   DD SYSOUT=A
+        //SENDRES  EXEC PGM=IEBGENER,COND=(0,NE,UPDATE)
+        //SYSPRINT DD SYSOUT=A
+        //SYSUT1   DD DSN=%s,DISP=SHR
+        //SYSUT2   DD SYSOUT=Z
+        //SYSIN    DD DUMMY
+        //
+        """.formatted(
                 jobName,
                 properties.jobUser(),
                 properties.jobPassword(),
                 spec.programName(),
                 inputRecord,
                 spec.targetDataset(),
+                resultDataset,
                 resultDataset
         );
     }

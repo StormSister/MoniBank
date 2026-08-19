@@ -22,6 +22,7 @@
 
        FD  INPUT-FILE
            LABEL RECORDS ARE OMITTED.
+
        01  INPUT-CARD              PIC X(80).
 
        FD  CUSTOMER-FILE
@@ -43,26 +44,31 @@
            LABEL RECORDS ARE OMITTED.
 
        01  RESULT-RECORD.
-           05 RESULT-PREFIX        PIC X(4).
+           05 RESULT-PREFIX        PIC X(3).
+           05 RESULT-SEP-0         PIC X(1).
            05 RESULT-TYPE          PIC X(1).
            05 RESULT-SEP-1         PIC X(1).
-           05 RESULT-OPERATION     PIC X(8).
+           05 RESULT-OPERATION     PIC X(7).
            05 RESULT-SEP-2         PIC X(1).
-           05 RESULT-CUSTOMER-ID   PIC X(13).
+           05 RESULT-REQUEST-ID    PIC X(8).
            05 RESULT-SEP-3         PIC X(1).
-           05 RESULT-STATUS        PIC X(1).
+           05 RESULT-CUSTOMER-ID   PIC X(13).
            05 RESULT-SEP-4         PIC X(1).
+           05 RESULT-STATUS        PIC X(1).
+           05 RESULT-SEP-5         PIC X(1).
            05 RESULT-ERROR-CODE    PIC X(20).
-           05 FILLER               PIC X(109).
+           05 FILLER               PIC X(101).
 
        WORKING-STORAGE SECTION.
 
        01  REQUEST-CARD.
+           05 REQUEST-ID           PIC X(8).
            05 REQUEST-CUSTOMER-ID  PIC X(13).
            05 REQUEST-STATUS       PIC X(1).
-           05 FILLER               PIC X(66).
+           05 FILLER               PIC X(58).
 
        01  WS-CUSTOMER-ID          PIC X(13).
+       01  WS-CUSTOMER-OPEN        PIC X VALUE 'N'.
 
        PROCEDURE DIVISION.
 
@@ -72,64 +78,113 @@
            READ INPUT-FILE
                AT END
                    PERFORM PREPARE-RESULT
-                   MOVE 'E' TO RESULT-TYPE
-                   MOVE 'NOINPUT' TO RESULT-ERROR-CODE
-                   WRITE RESULT-RECORD
+                   MOVE 'E'
+                       TO RESULT-TYPE
+                   MOVE 'NOINPUT'
+                       TO RESULT-ERROR-CODE
+                   PERFORM WRITE-RESULT
                    GO TO END-PROGRAM.
 
-           MOVE INPUT-CARD TO REQUEST-CARD.
+           MOVE INPUT-CARD
+               TO REQUEST-CARD.
 
-           MOVE REQUEST-CUSTOMER-ID TO WS-CUSTOMER-ID.
+           MOVE REQUEST-CUSTOMER-ID
+               TO WS-CUSTOMER-ID.
 
            OPEN I-O CUSTOMER-FILE.
+           MOVE 'Y'
+               TO WS-CUSTOMER-OPEN.
 
            READ CUSTOMER-FILE
                INVALID KEY
                    PERFORM PREPARE-RESULT
-                   MOVE 'E' TO RESULT-TYPE
+                   MOVE 'E'
+                       TO RESULT-TYPE
                    MOVE REQUEST-CUSTOMER-ID
                        TO RESULT-CUSTOMER-ID
-                   MOVE 'NOTFOUND' TO RESULT-ERROR-CODE
-                   WRITE RESULT-RECORD
+                   MOVE REQUEST-STATUS
+                       TO RESULT-STATUS
+                   MOVE 'NOTFOUND'
+                       TO RESULT-ERROR-CODE
+                   PERFORM WRITE-RESULT
                    GO TO END-PROGRAM.
 
-           MOVE REQUEST-STATUS TO CUSTOMER-STATUS.
+           MOVE REQUEST-STATUS
+               TO CUSTOMER-STATUS.
 
            REWRITE CUSTOMER-RECORD
                INVALID KEY
                    PERFORM PREPARE-RESULT
-                   MOVE 'E' TO RESULT-TYPE
+                   MOVE 'E'
+                       TO RESULT-TYPE
                    MOVE CUSTOMER-ID
                        TO RESULT-CUSTOMER-ID
                    MOVE CUSTOMER-STATUS
                        TO RESULT-STATUS
-                   MOVE 'REWRITE' TO RESULT-ERROR-CODE
-                   WRITE RESULT-RECORD
+                   MOVE 'REWRITE'
+                       TO RESULT-ERROR-CODE
+                   PERFORM WRITE-RESULT
                    GO TO END-PROGRAM.
 
            PERFORM PREPARE-RESULT.
 
-           MOVE 'S' TO RESULT-TYPE.
-           MOVE CUSTOMER-ID TO RESULT-CUSTOMER-ID.
-           MOVE CUSTOMER-STATUS TO RESULT-STATUS.
-           MOVE 'OK' TO RESULT-ERROR-CODE.
+           MOVE 'S'
+               TO RESULT-TYPE.
 
-           WRITE RESULT-RECORD.
+           MOVE CUSTOMER-ID
+               TO RESULT-CUSTOMER-ID.
+
+           MOVE CUSTOMER-STATUS
+               TO RESULT-STATUS.
+
+           MOVE 'OK'
+               TO RESULT-ERROR-CODE.
+
+           PERFORM WRITE-RESULT.
 
        END-PROGRAM.
 
            CLOSE INPUT-FILE.
-           CLOSE CUSTOMER-FILE.
+
+           IF WS-CUSTOMER-OPEN = 'Y'
+               CLOSE CUSTOMER-FILE.
+
            CLOSE RESULT-FILE.
 
            STOP RUN.
 
        PREPARE-RESULT.
 
-           MOVE SPACES TO RESULT-RECORD.
-           MOVE 'MBR|' TO RESULT-PREFIX.
-           MOVE '|' TO RESULT-SEP-1.
-           MOVE '|' TO RESULT-SEP-2.
-           MOVE '|' TO RESULT-SEP-3.
-           MOVE '|' TO RESULT-SEP-4.
-           MOVE 'CHGCUST' TO RESULT-OPERATION.
+           MOVE SPACES
+               TO RESULT-RECORD.
+
+           MOVE 'MBR'
+               TO RESULT-PREFIX.
+
+           MOVE ';'
+               TO RESULT-SEP-0.
+
+           MOVE ';'
+               TO RESULT-SEP-1.
+
+           MOVE ';'
+               TO RESULT-SEP-2.
+
+           MOVE ';'
+               TO RESULT-SEP-3.
+
+           MOVE ';'
+               TO RESULT-SEP-4.
+
+           MOVE ';'
+               TO RESULT-SEP-5.
+
+           MOVE 'CHGCUST'
+               TO RESULT-OPERATION.
+
+           MOVE REQUEST-ID
+               TO RESULT-REQUEST-ID.
+
+       WRITE-RESULT.
+
+           WRITE RESULT-RECORD.

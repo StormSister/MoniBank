@@ -14,8 +14,10 @@ import com.monibank.mainframe.port.MainframeResultStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +33,7 @@ public class CustomerService {
     private final MainframeRequestIdGenerator requestIdGenerator;
     private final MainframeResultStore mainframeResultStore;
     private final MainframeResultParser mainframeResultParser;
+    private final MainframeTcpResultListener tcpResultListener;
 
     public String createCustomer(CreateCustomerRequest request) {
 
@@ -240,8 +243,12 @@ public class CustomerService {
             String status
     ) {
 
+        String requestId =
+                requestIdGenerator.next();
+
         String inputRecord =
                 customerRecordMapper.toStatusUpdateRecord(
+                        requestId,
                         customerId,
                         status
                 );
@@ -249,33 +256,80 @@ public class CustomerService {
         String jobName =
                 jobNameGenerator.next();
 
-        String requestId =
-                requestIdGenerator.next();
-
         String resultDataset =
                 "MBANK.RES." + requestId;
 
-        String jcl =
-                businessJclFactory.createUpdate(
-                        jobName,
-                        resultDataset,
-                        CustomerMainframeOperations.CHANGE_STATUS,
-                        inputRecord
-                );
+        /*
+         * MUSI być przed submitJcl().
+         * Odpowiedź może przyjść bardzo szybko.
+         */
+        tcpResultListener.register(requestId);
 
-        mainframeGateway.submitJcl(jcl);
+        try {
 
-        waitForJob(jobName);
+            String jcl =
+                    businessJclFactory.createUpdate(
+                            jobName,
+                            resultDataset,
+                            CustomerMainframeOperations.CHANGE_STATUS,
+                            inputRecord
+                    );
 
-        List<String> rawRecords =
-                mainframeResultStore.read(
+            mainframeGateway.submitJcl(jcl);
+
+            List<String> rawRecords;
+
+            try {
+
+                rawRecords =
+                        tcpResultListener.await(
+                                requestId,
+                                Duration.ofSeconds(5)
+                        );
+
+            } catch (TimeoutException e) {
+
+                /*
+                 * TCP nie odpowiedział w czasie.
+                 * Wracamy do naszego starego mechanizmu
+                 * odczytu datasetu.
+                 */
+                rawRecords =
+                        mainframeResultStore.read(
+                                resultDataset
+                        );
+            }
+
+            MainframeResult result =
+                    mainframeResultParser.parse(
+                            rawRecords
+                    );
+
+            validateResult(result);
+
+            return result;
+
+        } finally {
+
+            tcpResultListener.unregister(requestId);
+
+            /*
+             * CHGCUST nadal tworzy dataset jako fallback,
+             * więc po wszystkim go sprzątamy.
+             */
+            try {
+                mainframeResultStore.delete(
                         resultDataset
                 );
+            } catch (Exception ignored) {
+                // cleanup nie może zepsuć odpowiedzi HTTP
+            }
+        }
+    }
 
-        MainframeResult result =
-                mainframeResultParser.parse(
-                        rawRecords
-                );
+    private void validateResult(
+            MainframeResult result
+    ) {
 
         if ("E".equals(result.header().type())) {
             throw new IllegalStateException(
@@ -299,13 +353,6 @@ public class CustomerService {
                             + result.header().operation()
             );
         }
-
-        mainframeResultStore.delete(
-                resultDataset
-        );
-
-        return result;
     }
-
 
 }
