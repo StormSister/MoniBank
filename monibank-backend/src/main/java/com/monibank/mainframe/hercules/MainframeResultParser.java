@@ -23,6 +23,7 @@ public class MainframeResultParser {
         }
 
         MainframeResultHeader header = null;
+
         List<MainframeDataRecord> data =
                 new ArrayList<>();
 
@@ -33,17 +34,33 @@ public class MainframeResultParser {
                 continue;
             }
 
+            /*
+             * NIE używamy trim().
+             *
+             * Rekord D może zawierać fixed-width payload.
+             * Trailing spaces są częścią rekordu mainframe.
+             */
             String record =
-                    rawRecord.trim();
+                    rawRecord
+                            .replace("\f", "")
+                            .replace("\r", "")
+                            .stripLeading();
 
             if (!record.startsWith(PREFIX)) {
                 continue;
             }
 
-            String[] parts =
-                    record.split(SEPARATOR, -1);
+            /*
+             * Potrzebujemy tylko pierwszych kilku pól,
+             * żeby rozpoznać typ.
+             */
+            String[] prefixParts =
+                    record.split(
+                            SEPARATOR,
+                            5
+                    );
 
-            if (parts.length < 4) {
+            if (prefixParts.length < 4) {
                 throw new IllegalArgumentException(
                         "Invalid MBR record: "
                                 + record
@@ -51,7 +68,7 @@ public class MainframeResultParser {
             }
 
             String type =
-                    value(parts, 1);
+                    prefixParts[1].trim();
 
             switch (type) {
 
@@ -64,12 +81,12 @@ public class MainframeResultParser {
                     }
 
                     header =
-                            parseHeader(parts);
+                            parseHeader(record);
                 }
 
                 case "D" ->
                         data.add(
-                                parseDataRecord(parts)
+                                parseDataRecord(record)
                         );
 
                 default ->
@@ -93,7 +110,7 @@ public class MainframeResultParser {
     }
 
     private MainframeResultHeader parseHeader(
-            String[] parts
+            String record
     ) {
 
         /*
@@ -107,6 +124,12 @@ public class MainframeResultParser {
          * 5 status
          * 6 code
          */
+
+        String[] parts =
+                record.split(
+                        SEPARATOR,
+                        -1
+                );
 
         String type =
                 value(parts, 1);
@@ -133,38 +156,47 @@ public class MainframeResultParser {
     }
 
     private MainframeDataRecord parseDataRecord(
-            String[] parts
+            String record
     ) {
 
         /*
-         * MBR;D;CUSTOMER;Rxxxxxxx;<payload...>
+         * MBR;D;CUSTOMER;Rxxxxxxx;<fixed-width payload>
          *
-         * requestId z indeksu 3 pomijamy,
-         * ponieważ służy listenerowi do routingu.
+         * Split robimy maksymalnie na 5 części.
+         * Dzięki temu cały payload zostaje nienaruszony.
          */
+        String[] parts =
+                record.split(
+                        SEPARATOR,
+                        5
+                );
 
-        String entityType =
-                value(parts, 2);
-
-        StringBuilder payload =
-                new StringBuilder();
-
-        for (int i = 4;
-             i < parts.length;
-             i++) {
-
-            if (i > 4) {
-                payload.append(SEPARATOR);
-            }
-
-            payload.append(
-                    parts[i].trim()
+        if (parts.length < 5) {
+            throw new IllegalArgumentException(
+                    "Invalid MBR data record: "
+                            + record
             );
         }
 
+        String entityType =
+                parts[2].trim();
+
+        /*
+         * CELOWO bez trim().
+         *
+         * Dla TCP może mieć dokładnie 119 znaków.
+         * Dla fallbacku może mieć dodatkowy padding
+         * wynikający z LRECL=160.
+         *
+         * Parser konkretnej encji bierze swoją
+         * właściwą długość rekordu.
+         */
+        String payload =
+                parts[4];
+
         return new MainframeDataRecord(
                 entityType,
-                payload.toString()
+                payload
         );
     }
 

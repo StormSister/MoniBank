@@ -1,6 +1,5 @@
 package com.monibank.mainframe.api;
 
-import com.monibank.mainframe.hercules.MainframeBusinessJclFactory;
 import com.monibank.mainframe.hercules.*;
 import com.monibank.mainframe.hercules.jcl.*;
 import com.monibank.mainframe.model.JobStatus;

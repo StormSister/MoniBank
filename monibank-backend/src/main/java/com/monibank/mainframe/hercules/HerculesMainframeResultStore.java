@@ -2,6 +2,7 @@ package com.monibank.mainframe.hercules;
 
 import com.monibank.mainframe.port.MainframeGateway;
 import com.monibank.mainframe.port.MainframeLogSource;
+import com.monibank.mainframe.port.MainframeResultSpoolSource;
 import com.monibank.mainframe.port.MainframeResultStore;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,9 +18,9 @@ public class HerculesMainframeResultStore
     private static final int RESULT_RECORD_LENGTH = 160;
 
     private final MainframeGateway mainframeGateway;
-    private final MainframeLogSource mainframeLogSource;
+    private final MainframeResultSpoolSource mainframeLogSource;
     private final JobNameGenerator jobNameGenerator;
-    private final MainframeResultJclFactory resultJclFactory;
+    private final MainframeJclFactory jclFactory;
 
     @Override
     public List<String> read(String datasetName) {
@@ -28,7 +29,7 @@ public class HerculesMainframeResultStore
                 jobNameGenerator.next();
 
         String jcl =
-                resultJclFactory.createRead(
+                jclFactory.createResultRead(
                         jobName,
                         datasetName
                 );
@@ -51,7 +52,7 @@ public class HerculesMainframeResultStore
                 jobNameGenerator.next();
 
         String jcl =
-                resultJclFactory.createDelete(
+                jclFactory.createResultDelete(
                         jobName,
                         datasetName
                 );
@@ -96,14 +97,6 @@ public class HerculesMainframeResultStore
     ) {
 
         int datasetLine = -1;
-
-        /*
-         * Szukamy OD KOŃCA, ponieważ jobName może kiedyś
-         * powtórzyć się po restarcie aplikacji.
-         *
-         * datasetName MBANK.RES.Rxxxxxxx jest unikalny
-         * dla konkretnego requestu.
-         */
         for (int i = lines.size() - 1; i >= 0; i--) {
 
             String line = lines.get(i);
@@ -114,12 +107,6 @@ public class HerculesMainframeResultStore
                 datasetLine = i;
                 break;
             }
-
-            /*
-             * W JCL listing może być datasetName,
-             * ale jobName nie zawsze znajduje się
-             * dokładnie w tej samej linii.
-             */
             if (line.contains(datasetName)) {
                 datasetLine = i;
                 break;
@@ -191,10 +178,6 @@ public class HerculesMainframeResultStore
                     .replace("\r", "")
                     .stripLeading();
 
-            /*
-             * Interesują nas WYŁĄCZNIE rekordy
-             * protokołu Monibank.
-             */
             if (!normalized.startsWith("MBR;")) {
                 continue;
             }

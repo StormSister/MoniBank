@@ -17,19 +17,17 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @PostMapping
-    public ResponseEntity<String> createCustomer(
+    public ResponseEntity<MainframeResult> createCustomer(
             @RequestBody CreateCustomerRequest request
     ) {
 
-        String jobName =
-                customerService.createCustomer(request);
-
-        return ResponseEntity.accepted()
-                .body(jobName);
+        return ResponseEntity.ok(
+                customerService.createCustomer(request)
+        );
     }
 
     @GetMapping
-    public ResponseEntity<List<CustomerResponse>> getCustomers() {
+    public ResponseEntity<MainframeResult> getCustomers() {
 
         return ResponseEntity.ok(
                 customerService.getCustomers()

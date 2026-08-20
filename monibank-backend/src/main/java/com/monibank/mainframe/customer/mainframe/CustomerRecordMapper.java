@@ -100,4 +100,33 @@ public class CustomerRecordMapper
 
         return record;
     }
+
+    public String toCreateRecord(
+            String requestId,
+            CreateCustomerRequest request
+    ) {
+
+        if (requestId == null
+                || requestId.length() != 8) {
+            throw new IllegalArgumentException(
+                    "Request ID must have exactly 8 characters"
+            );
+        }
+
+        String customerRecord =
+                toRecord(request);
+
+        String record =
+                requestId
+                        + customerRecord;
+
+        if (record.length() != 127) {
+            throw new IllegalStateException(
+                    "Create customer mainframe record must have length 127, got "
+                            + record.length()
+            );
+        }
+
+        return record;
+    }
 }

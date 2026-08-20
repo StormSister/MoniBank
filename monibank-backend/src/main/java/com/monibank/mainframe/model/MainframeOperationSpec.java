@@ -4,7 +4,8 @@ public record MainframeOperationSpec(
         String operationName,
         String programName,
         String targetDataset,
-        int recordLength,
+        int inputRecordLength,
+        int entityRecordLength,
         MainframeOperationType type
 ) {
 }

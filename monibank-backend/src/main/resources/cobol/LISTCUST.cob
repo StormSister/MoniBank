@@ -1,5 +1,5 @@
        IDENTIFICATION DIVISION.
-       PROGRAM-ID. CHGCUST.
+       PROGRAM-ID. LISTCUST.
 
        ENVIRONMENT DIVISION.
        INPUT-OUTPUT SECTION.
@@ -10,9 +10,8 @@
 
            SELECT CUSTOMER-FILE
                ASSIGN TO DA-I-CUSTFILE
-               ACCESS IS RANDOM
-               RECORD KEY IS CUSTOMER-ID
-               NOMINAL KEY IS WS-CUSTOMER-ID.
+               ACCESS IS SEQUENTIAL
+               RECORD KEY IS CUSTOMER-ID.
 
            SELECT RESULT-FILE
                ASSIGN TO UT-S-RESULT.
@@ -49,11 +48,9 @@
 
        01  REQUEST-CARD.
            05 REQUEST-ID           PIC X(8).
-           05 REQUEST-CUSTOMER-ID  PIC X(13).
-           05 REQUEST-STATUS       PIC X(1).
-           05 FILLER               PIC X(58).
+           05 FILLER               PIC X(72).
 
-       01  WS-CUSTOMER-ID          PIC X(13).
+       01  WS-END-OF-FILE          PIC X VALUE 'N'.
        01  WS-CUSTOMER-OPEN        PIC X VALUE 'N'.
 
        01  RESULT-HEADER.
@@ -61,16 +58,16 @@
            05 RH-SEP-0             PIC X(1).
            05 RH-TYPE              PIC X(1).
            05 RH-SEP-1             PIC X(1).
-           05 RH-OPERATION         PIC X(7).
+           05 RH-OPERATION         PIC X(8).
            05 RH-SEP-2             PIC X(1).
            05 RH-REQUEST-ID        PIC X(8).
            05 RH-SEP-3             PIC X(1).
-           05 RH-CUSTOMER-ID       PIC X(13).
+           05 RH-ENTITY-ID         PIC X(13).
            05 RH-SEP-4             PIC X(1).
            05 RH-STATUS            PIC X(1).
            05 RH-SEP-5             PIC X(1).
            05 RH-ERROR-CODE        PIC X(20).
-           05 FILLER               PIC X(101).
+           05 FILLER               PIC X(100).
 
        01  RESULT-DATA.
            05 RD-PREFIX            PIC X(3).
@@ -102,71 +99,18 @@
            MOVE INPUT-CARD
                TO REQUEST-CARD.
 
-           MOVE REQUEST-CUSTOMER-ID
-               TO WS-CUSTOMER-ID.
-
-           OPEN I-O CUSTOMER-FILE.
+           OPEN INPUT CUSTOMER-FILE.
 
            MOVE 'Y'
                TO WS-CUSTOMER-OPEN.
 
-           READ CUSTOMER-FILE
-               INVALID KEY
-                   PERFORM PREPARE-HEADER
-                   MOVE 'E'
-                       TO RH-TYPE
-                   MOVE REQUEST-CUSTOMER-ID
-                       TO RH-CUSTOMER-ID
-                   MOVE REQUEST-STATUS
-                       TO RH-STATUS
-                   MOVE 'NOTFOUND'
-                       TO RH-ERROR-CODE
-                   PERFORM WRITE-HEADER
-                   GO TO END-PROGRAM.
-
-           MOVE REQUEST-STATUS
-               TO CUSTOMER-STATUS.
-
-           REWRITE CUSTOMER-RECORD
-               INVALID KEY
-                   PERFORM PREPARE-HEADER
-                   MOVE 'E'
-                       TO RH-TYPE
-                   MOVE CUSTOMER-ID
-                       TO RH-CUSTOMER-ID
-                   MOVE CUSTOMER-STATUS
-                       TO RH-STATUS
-                   MOVE 'REWRITE'
-                       TO RH-ERROR-CODE
-                   PERFORM WRITE-HEADER
-                   GO TO END-PROGRAM.
-
-      * -------------------------------------------------
-      * SUCCESS:
-      * najpierw aktualne dane CUSTOMER
-      * -------------------------------------------------
-
-           PERFORM PREPARE-DATA.
-
-           MOVE CUSTOMER-RECORD
-               TO RD-CUSTOMER.
-
-           PERFORM WRITE-DATA.
-
-      * -------------------------------------------------
-      * na końcu terminalny SUCCESS
-      * -------------------------------------------------
+           PERFORM READ-CUSTOMER
+               UNTIL WS-END-OF-FILE = 'Y'.
 
            PERFORM PREPARE-HEADER.
 
            MOVE 'S'
                TO RH-TYPE.
-
-           MOVE CUSTOMER-ID
-               TO RH-CUSTOMER-ID.
-
-           MOVE CUSTOMER-STATUS
-               TO RH-STATUS.
 
            MOVE 'OK'
                TO RH-ERROR-CODE.
@@ -183,6 +127,19 @@
            CLOSE RESULT-FILE.
 
            STOP RUN.
+
+       READ-CUSTOMER.
+
+           READ CUSTOMER-FILE
+               AT END
+                   MOVE 'Y'
+                       TO WS-END-OF-FILE.
+
+           IF WS-END-OF-FILE = 'N'
+               PERFORM PREPARE-DATA
+               MOVE CUSTOMER-RECORD
+                   TO RD-CUSTOMER
+               PERFORM WRITE-DATA.
 
        PREPARE-HEADER.
 
@@ -210,7 +167,7 @@
            MOVE ';'
                TO RH-SEP-5.
 
-           MOVE 'CHGCUST'
+           MOVE 'LISTCUST'
                TO RH-OPERATION.
 
            MOVE REQUEST-ID
