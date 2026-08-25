@@ -15,12 +15,12 @@ public class CustomerRecordMapper
             DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     @Override
-    public String toRecord(CreateCustomerRequest request) {
+    public String toRecord(
+            CreateCustomerRequest request
+    ) {
 
         String record =
-                fixed("A", 1)
-                        + fixed(request.customerId(), 13)
-                        + fixed(request.countryCode(), 2)
+                fixed(request.countryCode(), 2)
                         + fixed(request.nationalId(), 11)
                         + fixed(request.firstName(), 30)
                         + fixed(request.lastName(), 40)
@@ -31,9 +31,9 @@ public class CustomerRecordMapper
                         14
                 );
 
-        if (record.length() != 119) {
+        if (record.length() != 105) {
             throw new IllegalStateException(
-                    "Customer mainframe record must have length 119, got "
+                    "Customer data must have length 105, got "
                             + record.length()
             );
         }
@@ -41,22 +41,28 @@ public class CustomerRecordMapper
         return record;
     }
 
-    private String fixed(String value, int length) {
+    public String toCreateRecord(
+            String requestId,
+            String customerId,
+            CreateCustomerRequest request
+    ) {
 
-        String safeValue =
-                value == null ? "" : value;
+        validateRequestId(requestId);
+        validateCustomerId(customerId);
 
-        if (safeValue.length() > length) {
-            throw new IllegalArgumentException(
-                    "Value too long for mainframe field: "
-                            + safeValue
+        String record =
+                requestId
+                        + customerId
+                        + toRecord(request);
+
+        if (record.length() != 126) {
+            throw new IllegalStateException(
+                    "Create customer mainframe request must have length 126, got "
+                            + record.length()
             );
         }
 
-        return String.format(
-                "%-" + length + "s",
-                safeValue
-        );
+        return record;
     }
 
     public String toStatusUpdateRecord(
@@ -65,19 +71,8 @@ public class CustomerRecordMapper
             String status
     ) {
 
-        if (requestId == null
-                || requestId.length() != 8) {
-            throw new IllegalArgumentException(
-                    "Request ID must have exactly 8 characters"
-            );
-        }
-
-        if (customerId == null
-                || customerId.length() != 13) {
-            throw new IllegalArgumentException(
-                    "Customer ID must have exactly 13 characters"
-            );
-        }
+        validateRequestId(requestId);
+        validateCustomerId(customerId);
 
         if (!"A".equals(status)
                 && !"I".equals(status)) {
@@ -101,9 +96,8 @@ public class CustomerRecordMapper
         return record;
     }
 
-    public String toCreateRecord(
-            String requestId,
-            CreateCustomerRequest request
+    private void validateRequestId(
+            String requestId
     ) {
 
         if (requestId == null
@@ -112,21 +106,44 @@ public class CustomerRecordMapper
                     "Request ID must have exactly 8 characters"
             );
         }
+    }
 
-        String customerRecord =
-                toRecord(request);
+    private void validateCustomerId(
+            String customerId
+    ) {
 
-        String record =
-                requestId
-                        + customerRecord;
-
-        if (record.length() != 127) {
-            throw new IllegalStateException(
-                    "Create customer mainframe record must have length 127, got "
-                            + record.length()
+        if (customerId == null
+                || customerId.length() != 13) {
+            throw new IllegalArgumentException(
+                    "Customer ID must have exactly 13 characters"
             );
         }
 
-        return record;
+        if (!customerId.matches("C\\d{12}")) {
+            throw new IllegalArgumentException(
+                    "Customer ID must match C followed by 12 digits"
+            );
+        }
+    }
+
+    private String fixed(
+            String value,
+            int length
+    ) {
+
+        String safeValue =
+                value == null ? "" : value;
+
+        if (safeValue.length() > length) {
+            throw new IllegalArgumentException(
+                    "Value too long for mainframe field: "
+                            + safeValue
+            );
+        }
+
+        return String.format(
+                "%-" + length + "s",
+                safeValue
+        );
     }
 }

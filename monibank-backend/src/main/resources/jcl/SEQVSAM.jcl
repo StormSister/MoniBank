@@ -1,26 +1,26 @@
-//CUSVSAM JOB (TEST),'CREATE CUSTOMER VSAM',
+//SEQVSAM JOB (TEST),'CREATE SEQUENCE VSAM',
 //             CLASS=A,
 //             MSGCLASS=A,
 //             MSGLEVEL=(1,1),
 //             USER=${JOB_USER},
 //             PASSWORD=${JOB_PASSWORD}
 //STEP1    EXEC PGM=IDCAMS
+//STEPCAT  DD DSN=SYS1.UCAT.TSO,DISP=SHR
 //SYSPRINT DD SYSOUT=*
 //SYSIN    DD *
   DEFINE CLUSTER ( -
-         NAME(MBANK.CUST) -
+         NAME(MBANK.SEQ) -
          VOLUMES(TSO001) -
          INDEXED -
-         KEYS(13 1) -
-         RECORDSIZE(119 119) -
-         TRACKS(5 2) -
+         KEYS(12 0) -
+         RECORDSIZE(32 32) -
+         TRACKS(1 1) -
          SHAREOPTIONS(2 3) -
   ) -
   DATA ( -
-       NAME(MBANK.CUST.D) -
+       NAME(MBANK.SEQ.D) -
   ) -
   INDEX ( -
-        NAME(MBANK.CUST.I) -
-  ) -
-  CATALOG(SYS1.UCAT.TSO)
+        NAME(MBANK.SEQ.I) -
+  )
 /*

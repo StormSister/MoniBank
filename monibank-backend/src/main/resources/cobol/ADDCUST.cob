@@ -2,286 +2,450 @@
        PROGRAM-ID. ADDCUST.
 
        ENVIRONMENT DIVISION.
-       INPUT-OUTPUT SECTION.
-       FILE-CONTROL.
-
-           SELECT INPUT-FILE
-               ASSIGN TO UT-S-INPUT.
-
-           SELECT OUTPUT-FILE
-               ASSIGN TO UT-S-OUTPUT.
-
-           SELECT RESULT-FILE
-               ASSIGN TO UT-S-RESULT.
 
        DATA DIVISION.
-       FILE SECTION.
-
-       FD  INPUT-FILE
-           LABEL RECORDS ARE OMITTED.
-
-       01  INPUT-CARD              PIC X(80).
-
-       FD  OUTPUT-FILE
-           LABEL RECORDS ARE OMITTED.
-
-       01  OUTPUT-RECORD           PIC X(119).
-
-       FD  RESULT-FILE
-           LABEL RECORDS ARE OMITTED.
-
-       01  RESULT-RECORD           PIC X(160).
-
        WORKING-STORAGE SECTION.
 
-      * -------------------------------------------------
-      * REQUEST
-      *
-      * 8   REQUEST-ID
-      * 119 CUSTOMER
-      * ----------------
-      * 127 CHARACTERS
-      *
-      * JCL reader dostarcza rekordy po 80 znakow,
-      * dlatego request skladamy z dwoch kart.
-      * -------------------------------------------------
+       COPY MBACMSD.
+
+      *-----------------------------------------------------------*
+      * CICS RESPONSE CODES                                       *
+      *-----------------------------------------------------------*
+
+       01  CICS-RESP-NORMAL        PIC S9(8) COMP VALUE +0.
+       01  CICS-RESP-NOTFND        PIC S9(8) COMP VALUE +13.
+       01  CICS-RESP-DUPREC        PIC S9(8) COMP VALUE +14.
+       01  CICS-RESP-DUPKEY        PIC S9(8) COMP VALUE +15.
+       01  CICS-RESP-NOTOPEN       PIC S9(8) COMP VALUE +19.
+       01  CICS-RESP-DISABLED      PIC S9(8) COMP VALUE +84.
+
+       01  WS-RESP                 PIC S9(8) COMP VALUE +0.
+       01  WS-SEQ-LENGTH           PIC S9(4) COMP VALUE +32.
+       01  WS-CUSTOMER-LENGTH      PIC S9(4) COMP VALUE +119.
+
+      *-----------------------------------------------------------*
+      * CREATE CUSTOMER REQUEST - 113 BYTES                        *
+      *-----------------------------------------------------------*
 
        01  REQUEST-RECORD.
-           05 REQUEST-PART-1       PIC X(80).
-           05 REQUEST-PART-2       PIC X(47).
-
-       01  REQUEST-FIELDS REDEFINES REQUEST-RECORD.
            05 REQUEST-ID           PIC X(8).
-           05 REQUEST-CUSTOMER     PIC X(119).
+           05 REQUEST-COUNTRY      PIC X(2).
+           05 REQUEST-NATIONAL-ID  PIC X(11).
+           05 REQUEST-FIRST-NAME   PIC X(30).
+           05 REQUEST-LAST-NAME    PIC X(40).
+           05 REQUEST-DATE-BIRTH   PIC X(8).
+           05 REQUEST-CREATED-AT   PIC X(14).
 
-      * -------------------------------------------------
-      * CUSTOMER RECORD
-      * Rekord zapisywany do MBANK.CUST.
-      * -------------------------------------------------
+      *-----------------------------------------------------------*
+      * ALTERNATE KEY: COUNTRY + NATIONAL ID                       *
+      *-----------------------------------------------------------*
+
+       01  NATIONAL-KEY.
+           05 NATIONAL-COUNTRY     PIC X(2).
+           05 NATIONAL-NUMBER      PIC X(11).
+
+       01  FIRST-CUSTOMER-KEY      PIC X(13).
+
+      *-----------------------------------------------------------*
+      * MBANK.SEQ RECORD - 32 BYTES                                *
+      *-----------------------------------------------------------*
+
+       01  SEQUENCE-KEY            PIC X(12)
+                                   VALUE 'CUSTOMER    '.
+
+       01  SEQUENCE-RECORD.
+           05 SEQUENCE-NAME        PIC X(12).
+           05 SEQUENCE-NUMBER      PIC 9(12).
+           05 FILLER               PIC X(8).
+
+       01  GENERATED-CUSTOMER-ID.
+           05 GENERATED-PREFIX     PIC X(1).
+           05 GENERATED-NUMBER     PIC 9(12).
+
+      *-----------------------------------------------------------*
+      * MBANK.CUST RECORD - 119 BYTES                              *
+      *-----------------------------------------------------------*
 
        01  CUSTOMER-RECORD.
            05 CUSTOMER-STATUS      PIC X(1).
            05 CUSTOMER-ID          PIC X(13).
-           05 COUNTRY-CODE         PIC X(2).
-           05 NATIONAL-ID          PIC X(11).
-           05 FIRST-NAME           PIC X(30).
-           05 LAST-NAME            PIC X(40).
-           05 DATE-OF-BIRTH        PIC X(8).
-           05 CREATED-AT           PIC X(14).
+           05 CUSTOMER-COUNTRY     PIC X(2).
+           05 CUSTOMER-NATIONAL-ID PIC X(11).
+           05 CUSTOMER-FIRST-NAME  PIC X(30).
+           05 CUSTOMER-LAST-NAME   PIC X(40).
+           05 CUSTOMER-DATE-BIRTH  PIC X(8).
+           05 CUSTOMER-CREATED-AT  PIC X(14).
 
-      * -------------------------------------------------
-      * TERMINAL RESULT
-      *
-      * MBR;S;ADDCUST;Rxxxxxxx;CUSTOMER-ID;STATUS;CODE
-      * albo
-      * MBR;E;ADDCUST;Rxxxxxxx;CUSTOMER-ID;STATUS;CODE
-      * -------------------------------------------------
+      *-----------------------------------------------------------*
+      * MONIBANK RESPONSE - 160 BYTES                              *
+      *-----------------------------------------------------------*
 
-       01  RESULT-HEADER.
-           05 RH-PREFIX            PIC X(3).
-           05 RH-SEP-0             PIC X(1).
-           05 RH-TYPE              PIC X(1).
-           05 RH-SEP-1             PIC X(1).
-           05 RH-OPERATION         PIC X(7).
-           05 RH-SEP-2             PIC X(1).
-           05 RH-REQUEST-ID        PIC X(8).
-           05 RH-SEP-3             PIC X(1).
-           05 RH-CUSTOMER-ID       PIC X(13).
-           05 RH-SEP-4             PIC X(1).
-           05 RH-STATUS            PIC X(1).
-           05 RH-SEP-5             PIC X(1).
-           05 RH-ERROR-CODE        PIC X(20).
-           05 FILLER               PIC X(101).
-
-      * -------------------------------------------------
-      * DATA RESULT
-      *
-      * MBR;D;CUSTOMER;Rxxxxxxx;<119 CHAR CUSTOMER>
-      * -------------------------------------------------
-
-       01  RESULT-DATA.
-           05 RD-PREFIX            PIC X(3).
-           05 RD-SEP-0             PIC X(1).
-           05 RD-TYPE              PIC X(1).
-           05 RD-SEP-1             PIC X(1).
-           05 RD-ENTITY            PIC X(8).
-           05 RD-SEP-2             PIC X(1).
-           05 RD-REQUEST-ID        PIC X(8).
-           05 RD-SEP-3             PIC X(1).
-           05 RD-CUSTOMER          PIC X(119).
-           05 FILLER               PIC X(17).
+       01  RESULT-RECORD.
+           05 RR-PREFIX            PIC X(3).
+           05 RR-SEP-0             PIC X(1).
+           05 RR-TYPE              PIC X(1).
+           05 RR-SEP-1             PIC X(1).
+           05 RR-OPERATION         PIC X(8).
+           05 RR-SEP-2             PIC X(1).
+           05 RR-REQUEST-ID        PIC X(8).
+           05 RR-SEP-3             PIC X(1).
+           05 RR-ENTITY            PIC X(8).
+           05 RR-SEP-4             PIC X(1).
+           05 RR-ENTITY-ID         PIC X(13).
+           05 RR-SEP-5             PIC X(1).
+           05 RR-STATUS            PIC X(1).
+           05 RR-SEP-6             PIC X(1).
+           05 RR-ERROR-CODE        PIC X(20).
+           05 FILLER               PIC X(91).
 
        PROCEDURE DIVISION.
 
-           OPEN INPUT INPUT-FILE.
-           OPEN OUTPUT OUTPUT-FILE.
-           OPEN OUTPUT RESULT-FILE.
+       MAIN-PROCESS.
 
-      * -------------------------------------------------
-      * CARD 1
-      * -------------------------------------------------
+           PERFORM PREPARE-RESULT.
 
-           READ INPUT-FILE
-               AT END
-                   PERFORM PREPARE-HEADER
-                   MOVE 'E'
-                       TO RH-TYPE
-                   MOVE 'NOINPUT1'
-                       TO RH-ERROR-CODE
-                   PERFORM WRITE-HEADER
-                   GO TO END-PROGRAM.
+           MOVE LOW-VALUES TO MBACMAPO.
 
-           MOVE INPUT-CARD
-               TO REQUEST-PART-1.
+           EXEC CICS
+               SEND MAP('MBACMAP')
+               MAPSET('MBACMSD')
+               FROM(MBACMAPO)
+               ERASE
+               RESP(WS-RESP)
+           END-EXEC.
 
-      * -------------------------------------------------
-      * CARD 2
-      * -------------------------------------------------
+           IF WS-RESP NOT = CICS-RESP-NORMAL
+               GO TO SEND-MAP-ERROR.
 
-           READ INPUT-FILE
-               AT END
-                   PERFORM PREPARE-HEADER
-                   MOVE 'E'
-                       TO RH-TYPE
-                   MOVE 'NOINPUT2'
-                       TO RH-ERROR-CODE
-                   PERFORM WRITE-HEADER
-                   GO TO END-PROGRAM.
+           MOVE SPACES TO REQIDI.
+           MOVE SPACES TO CNTRYI.
+           MOVE SPACES TO NATIDI.
+           MOVE SPACES TO FNAMEI.
+           MOVE SPACES TO LNAMEI.
+           MOVE SPACES TO DOBI.
+           MOVE SPACES TO CRTDATI.
 
-           MOVE INPUT-CARD
-               TO REQUEST-PART-2.
+           EXEC CICS
+               RECEIVE MAP('MBACMAP')
+               MAPSET('MBACMSD')
+               INTO(MBACMAPI)
+               RESP(WS-RESP)
+           END-EXEC.
 
-      * -------------------------------------------------
-      * Wyciagamy CUSTOMER ze 127-znakowego requestu.
-      * -------------------------------------------------
+           IF WS-RESP NOT = CICS-RESP-NORMAL
+               GO TO RECEIVE-ERROR.
 
-           MOVE REQUEST-CUSTOMER
-               TO CUSTOMER-RECORD.
+           IF REQIDL NOT = 8
+               MOVE 'BADREQID' TO RR-ERROR-CODE
+               GO TO INVALID-INPUT.
 
-      * -------------------------------------------------
-      * Rekord przygotowany dla OUTPUT.
-      * LOADVSAM w JCL zrobi REPRO do MBANK.CUST.
-      * -------------------------------------------------
+           IF CNTRYL NOT = 2
+               MOVE 'BADCOUNTRY' TO RR-ERROR-CODE
+               GO TO INVALID-INPUT.
 
-           MOVE CUSTOMER-RECORD
-               TO OUTPUT-RECORD.
+           IF NATIDL NOT = 11
+               MOVE 'BADNATIONALID' TO RR-ERROR-CODE
+               GO TO INVALID-INPUT.
 
-           WRITE OUTPUT-RECORD.
+           IF FNAMEL LESS THAN 1
+               MOVE 'BADFIRSTNAME' TO RR-ERROR-CODE
+               GO TO INVALID-INPUT.
 
-      * -------------------------------------------------
-      * DATA record.
-      *
-      * Zwracamy caly CUSTOMER, dzieki czemu Java/front
-      * nie musza ponownie robic READ ALL.
-      * -------------------------------------------------
+           IF LNAMEL LESS THAN 1
+               MOVE 'BADLASTNAME' TO RR-ERROR-CODE
+               GO TO INVALID-INPUT.
 
-           PERFORM PREPARE-DATA.
+           IF DOBL NOT = 8
+               MOVE 'BADDOB' TO RR-ERROR-CODE
+               GO TO INVALID-INPUT.
 
-           MOVE CUSTOMER-RECORD
-               TO RD-CUSTOMER.
+           IF CRTDATL NOT = 14
+               MOVE 'BADCREATEDAT' TO RR-ERROR-CODE
+               GO TO INVALID-INPUT.
 
-           PERFORM WRITE-DATA.
+           MOVE SPACES TO REQUEST-RECORD.
+           MOVE REQIDI TO REQUEST-ID.
+           MOVE CNTRYI TO REQUEST-COUNTRY.
+           MOVE NATIDI TO REQUEST-NATIONAL-ID.
+           MOVE FNAMEI TO REQUEST-FIRST-NAME.
+           MOVE LNAMEI TO REQUEST-LAST-NAME.
+           MOVE DOBI TO REQUEST-DATE-BIRTH.
+           MOVE CRTDATI TO REQUEST-CREATED-AT.
 
-      * -------------------------------------------------
-      * Terminal SUCCESS zawsze NA KONCU.
-      * Listener TCP zakonczy request dopiero po S.
-      * -------------------------------------------------
+       PROCESS-REQUEST.
 
-           PERFORM PREPARE-HEADER.
+           MOVE REQUEST-ID TO RR-REQUEST-ID.
 
-           MOVE 'S'
-               TO RH-TYPE.
+           MOVE REQUEST-COUNTRY
+               TO NATIONAL-COUNTRY.
 
-           MOVE CUSTOMER-ID
-               TO RH-CUSTOMER-ID.
+           MOVE REQUEST-NATIONAL-ID
+               TO NATIONAL-NUMBER.
 
-           MOVE CUSTOMER-STATUS
-               TO RH-STATUS.
+      *-----------------------------------------------------------*
+      * CHECK ALTERNATE INDEX                                      *
+      * NORMAL   = CUSTOMER ALREADY EXISTS                         *
+      * NOTFND   = WE MAY CONTINUE                                 *
+      *-----------------------------------------------------------*
 
-           MOVE 'OK'
-               TO RH-ERROR-CODE.
+           MOVE 119 TO WS-CUSTOMER-LENGTH.
 
-           PERFORM WRITE-HEADER.
+           EXEC CICS
+               READ DATASET('NATPATH')
+               INTO(CUSTOMER-RECORD)
+               RIDFLD(NATIONAL-KEY)
+               LENGTH(WS-CUSTOMER-LENGTH)
+               RESP(WS-RESP)
+           END-EXEC.
 
-       END-PROGRAM.
+           IF WS-RESP = CICS-RESP-NORMAL
+               GO TO DUPLICATE-NATIONAL-ID.
 
-           CLOSE INPUT-FILE.
-           CLOSE OUTPUT-FILE.
-           CLOSE RESULT-FILE.
+           IF WS-RESP = CICS-RESP-NOTFND
+               GO TO READ-CUSTOMER-SEQUENCE.
 
-           STOP RUN.
+           IF WS-RESP = CICS-RESP-NOTOPEN
+               GO TO CHECK-FIRST-CUSTOMER.
 
-       PREPARE-HEADER.
+           IF WS-RESP = CICS-RESP-DISABLED
+               GO TO CHECK-FIRST-CUSTOMER.
 
-           MOVE SPACES
-               TO RESULT-HEADER.
+           GO TO NATIONAL-READ-ERROR.
 
-           MOVE 'MBR'
-               TO RH-PREFIX.
+      *-----------------------------------------------------------*
+      * EMPTY AIX BOOTSTRAP                                       *
+      * BYPASS NATPATH ONLY WHEN CUSTFILE IS REALLY EMPTY.        *
+      *-----------------------------------------------------------*
 
-           MOVE ';'
-               TO RH-SEP-0.
+       CHECK-FIRST-CUSTOMER.
 
-           MOVE ';'
-               TO RH-SEP-1.
+           MOVE LOW-VALUES TO FIRST-CUSTOMER-KEY.
 
-           MOVE ';'
-               TO RH-SEP-2.
+           EXEC CICS
+               STARTBR DATASET('CUSTFILE')
+               RIDFLD(FIRST-CUSTOMER-KEY)
+               GTEQ
+               RESP(WS-RESP)
+           END-EXEC.
 
-           MOVE ';'
-               TO RH-SEP-3.
+           IF WS-RESP = CICS-RESP-NOTFND
+               GO TO READ-CUSTOMER-SEQUENCE.
 
-           MOVE ';'
-               TO RH-SEP-4.
+           IF WS-RESP NOT = CICS-RESP-NORMAL
+               GO TO NATIONAL-READ-ERROR.
 
-           MOVE ';'
-               TO RH-SEP-5.
+           EXEC CICS
+               ENDBR DATASET('CUSTFILE')
+               RESP(WS-RESP)
+           END-EXEC.
 
-           MOVE 'ADDCUST'
-               TO RH-OPERATION.
+           GO TO NATIONAL-READ-ERROR.
 
-           MOVE REQUEST-ID
-               TO RH-REQUEST-ID.
+      *-----------------------------------------------------------*
+      * LOCK AND READ CUSTOMER SEQUENCE                            *
+      *-----------------------------------------------------------*
 
-       PREPARE-DATA.
+       READ-CUSTOMER-SEQUENCE.
 
-           MOVE SPACES
-               TO RESULT-DATA.
+           MOVE 32 TO WS-SEQ-LENGTH.
 
-           MOVE 'MBR'
-               TO RD-PREFIX.
+           EXEC CICS
+               READ DATASET('SEQFILE')
+               INTO(SEQUENCE-RECORD)
+               RIDFLD(SEQUENCE-KEY)
+               LENGTH(WS-SEQ-LENGTH)
+               UPDATE
+               RESP(WS-RESP)
+           END-EXEC.
 
-           MOVE ';'
-               TO RD-SEP-0.
+           IF WS-RESP NOT = CICS-RESP-NORMAL
+               GO TO SEQUENCE-READ-ERROR.
 
-           MOVE 'D'
-               TO RD-TYPE.
+      * USE CURRENT VALUE FOR CUSTOMER ID.
 
-           MOVE ';'
-               TO RD-SEP-1.
+           MOVE 'C' TO GENERATED-PREFIX.
+           MOVE SEQUENCE-NUMBER TO GENERATED-NUMBER.
 
-           MOVE 'CUSTOMER'
-               TO RD-ENTITY.
+      * ADVANCE SEQUENCE FOR THE NEXT CUSTOMER.
 
-           MOVE ';'
-               TO RD-SEP-2.
+           ADD 1 TO SEQUENCE-NUMBER.
+           MOVE 32 TO WS-SEQ-LENGTH.
 
-           MOVE REQUEST-ID
-               TO RD-REQUEST-ID.
+           EXEC CICS
+               REWRITE DATASET('SEQFILE')
+               FROM(SEQUENCE-RECORD)
+               LENGTH(WS-SEQ-LENGTH)
+               RESP(WS-RESP)
+           END-EXEC.
 
-           MOVE ';'
-               TO RD-SEP-3.
+           IF WS-RESP NOT = CICS-RESP-NORMAL
+               GO TO SEQUENCE-WRITE-ERROR.
 
-       WRITE-DATA.
+      *-----------------------------------------------------------*
+      * BUILD CUSTOMER RECORD                                      *
+      *-----------------------------------------------------------*
 
-           MOVE RESULT-DATA
-               TO RESULT-RECORD.
+           MOVE SPACES TO CUSTOMER-RECORD.
 
-           WRITE RESULT-RECORD.
+           MOVE 'A'
+               TO CUSTOMER-STATUS.
 
-       WRITE-HEADER.
+           MOVE GENERATED-CUSTOMER-ID
+               TO CUSTOMER-ID.
 
-           MOVE RESULT-HEADER
-               TO RESULT-RECORD.
+           MOVE REQUEST-COUNTRY
+               TO CUSTOMER-COUNTRY.
 
-           WRITE RESULT-RECORD.
+           MOVE REQUEST-NATIONAL-ID
+               TO CUSTOMER-NATIONAL-ID.
+
+           MOVE REQUEST-FIRST-NAME
+               TO CUSTOMER-FIRST-NAME.
+
+           MOVE REQUEST-LAST-NAME
+               TO CUSTOMER-LAST-NAME.
+
+           MOVE REQUEST-DATE-BIRTH
+               TO CUSTOMER-DATE-BIRTH.
+
+           MOVE REQUEST-CREATED-AT
+               TO CUSTOMER-CREATED-AT.
+
+      *-----------------------------------------------------------*
+      * WRITE BASE RECORD.                                         *
+      * AIX WITH UPGRADE UPDATES NATPATH AUTOMATICALLY.            *
+      *-----------------------------------------------------------*
+
+           MOVE 119 TO WS-CUSTOMER-LENGTH.
+
+           EXEC CICS
+               WRITE DATASET('CUSTFILE')
+               FROM(CUSTOMER-RECORD)
+               RIDFLD(CUSTOMER-ID)
+               LENGTH(WS-CUSTOMER-LENGTH)
+               RESP(WS-RESP)
+           END-EXEC.
+
+           IF WS-RESP = CICS-RESP-DUPREC
+               GO TO DUPLICATE-CUSTOMER-ID.
+
+           IF WS-RESP = CICS-RESP-DUPKEY
+               GO TO DUPLICATE-NATIONAL-WRITE.
+
+           IF WS-RESP NOT = CICS-RESP-NORMAL
+               GO TO CUSTOMER-WRITE-ERROR.
+
+      *-----------------------------------------------------------*
+      * SUCCESS                                                    *
+      *-----------------------------------------------------------*
+
+           MOVE 'S' TO RR-TYPE.
+           MOVE CUSTOMER-ID TO RR-ENTITY-ID.
+           MOVE CUSTOMER-STATUS TO RR-STATUS.
+           MOVE 'OK' TO RR-ERROR-CODE.
+
+           GO TO SEND-RESULT.
+
+       RECEIVE-ERROR.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'RECEIVEFAIL' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       SEND-MAP-ERROR.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'MAPSENDFAIL' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       INVALID-INPUT.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE 'I' TO RR-STATUS.
+           GO TO SEND-RESULT.
+
+       DUPLICATE-NATIONAL-ID.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE CUSTOMER-ID TO RR-ENTITY-ID.
+           MOVE CUSTOMER-STATUS TO RR-STATUS.
+           MOVE 'DUPNATIONALID' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       NATIONAL-READ-ERROR.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'NATREADFAIL' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       SEQUENCE-READ-ERROR.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'SEQREADFAIL' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       SEQUENCE-WRITE-ERROR.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'SEQREWRITEFAIL' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       DUPLICATE-CUSTOMER-ID.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE GENERATED-CUSTOMER-ID TO RR-ENTITY-ID.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'DUPCUSTOMERID' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       DUPLICATE-NATIONAL-WRITE.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE GENERATED-CUSTOMER-ID TO RR-ENTITY-ID.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'DUPNATIONALID' TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
+
+       CUSTOMER-WRITE-ERROR.
+
+           MOVE 'E' TO RR-TYPE.
+           MOVE GENERATED-CUSTOMER-ID TO RR-ENTITY-ID.
+           MOVE 'I' TO RR-STATUS.
+           MOVE 'CUSTOMERWRITEFAIL' TO RR-ERROR-CODE.
+
+       SEND-RESULT.
+
+           EXEC CICS
+               SEND TEXT
+               FROM(RESULT-RECORD)
+               ERASE
+               FREEKB
+           END-EXEC.
+
+           EXEC CICS
+               RETURN
+           END-EXEC.
+
+           GOBACK.
+
+       PREPARE-RESULT.
+
+           MOVE SPACES TO RESULT-RECORD.
+
+           MOVE 'MBR' TO RR-PREFIX.
+           MOVE ';' TO RR-SEP-0.
+           MOVE ';' TO RR-SEP-1.
+           MOVE ';' TO RR-SEP-2.
+           MOVE ';' TO RR-SEP-3.
+           MOVE ';' TO RR-SEP-4.
+           MOVE ';' TO RR-SEP-5.
+           MOVE ';' TO RR-SEP-6.
+
+           MOVE 'ADDCUST' TO RR-OPERATION.
+           MOVE '00000000' TO RR-REQUEST-ID.
+           MOVE 'CUSTOMER' TO RR-ENTITY.

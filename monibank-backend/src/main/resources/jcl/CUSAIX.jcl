@@ -1,0 +1,37 @@
+//CUSAIX  JOB (TEST),'CREATE CUSTOMER AIX',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//STEP1    EXEC PGM=IDCAMS
+//STEPCAT  DD DSN=SYS1.UCAT.TSO,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  DEFINE ALTERNATEINDEX ( -
+         NAME(MBANK.CUST.NATIX) -
+         RELATE(MBANK.CUST) -
+         VOLUMES(TSO001) -
+         TRACKS(1 1) -
+         KEYS(13 14) -
+         RECORDSIZE(31 31) -
+         UNIQUEKEY -
+         UPGRADE -
+  ) -
+  DATA ( -
+       NAME(MBANK.CUST.NATIX.D) -
+  ) -
+  INDEX ( -
+        NAME(MBANK.CUST.NATIX.I) -
+  )
+
+  DEFINE PATH ( -
+         NAME(MBANK.CUST.NATPATH) -
+         PATHENTRY(MBANK.CUST.NATIX) -
+         UPDATE -
+  )
+
+  BLDINDEX -
+       INDATASET(MBANK.CUST) -
+       OUTDATASET(MBANK.CUST.NATIX)
+/*

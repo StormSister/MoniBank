@@ -26,6 +26,8 @@ public class MainframeJobController {
     private final CompileCobolJclFactory compileCobolJclFactory;
     private final RunCobolJclFactory runCobolJclFactory;
     private final MainframeResultStore mainframeResultStore;
+    private final ResourceJclLoader resourceJclLoader;
+    private final CompileKicksCobolJclFactory compileKicksCobolJclFactory;
 
     @PostMapping("/test")
     public ResponseEntity<JobSubmission> submitTestJob() {
@@ -78,6 +80,20 @@ public class MainframeJobController {
                 .body("SUBMITTED");
     }
 
+    @PostMapping("/compile-kicks-cobol/{programName}")
+    public ResponseEntity<String> compileKicksCobol(
+            @PathVariable String programName
+    ) {
+        mainframeGateway.submitJcl(
+                compileKicksCobolJclFactory.create(
+                        programName.toUpperCase()
+                )
+        );
+
+        return ResponseEntity.accepted()
+                .body("SUBMITTED");
+    }
+
     @PostMapping("/run-cobol/{programName}")
     public ResponseEntity<String> runCobol(
             @PathVariable String programName
@@ -105,6 +121,24 @@ public class MainframeJobController {
         return ResponseEntity.ok(
                 mainframeResultStore.read(datasetName)
         );
+    }
+
+    @PostMapping("/submit-resource/{jclName}")
+    public ResponseEntity<String> submitResourceJcl(
+            @PathVariable String jclName
+    ) {
+
+        String jcl =
+                resourceJclLoader.load(
+                        jclName
+                );
+
+        mainframeGateway.submitJcl(
+                jcl
+        );
+
+        return ResponseEntity.accepted()
+                .body("SUBMITTED");
     }
 
 }

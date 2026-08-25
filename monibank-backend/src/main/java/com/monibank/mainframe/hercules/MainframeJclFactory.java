@@ -6,6 +6,8 @@ import com.monibank.mainframe.model.MainframeOperationType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.stream.Collectors;
+
 @Component
 @RequiredArgsConstructor
 public class MainframeJclFactory {
@@ -27,64 +29,36 @@ public class MainframeJclFactory {
                 inputRecord
         );
 
-        if (spec.type()
-                != MainframeOperationType.WRITE) {
-
-            throw new UnsupportedOperationException(
-                    "Operation type not supported by create(): "
-                            + spec.type()
-            );
-        }
-
-        String card1 =
-                inputRecord.substring(
-                        0,
-                        Math.min(
-                                80,
-                                inputRecord.length()
-                        )
+        String inputCards =
+                createInputCards(
+                        inputRecord
                 );
 
-        String card2 =
-                inputRecord.length() > 80
-                        ? inputRecord.substring(80)
-                        : "";
-
-        int entityLength =
-                spec.entityRecordLength();
+        String datasetDds =
+                createDatasetDdStatements(
+                        spec
+                );
 
         return """
-            //%s JOB (TEST),'MONIBANK WRITE',
+            //%s JOB (TEST),'MONIBANK OPERATION',
             //             CLASS=A,
             //             MSGCLASS=A,
             //             MSGLEVEL=(1,1),
             //             USER=%s,
             //             PASSWORD=%s
-            //WRITE    EXEC PGM=%s
+            //MAIN     EXEC PGM=%s
             //STEPLIB  DD DSN=HERC01.TEST.LOADLIB,DISP=SHR
             //INPUT    DD *
             %s
-            %s
             /*
-            //OUTPUT   DD DSN=&&MBREC,
-            //            DISP=(NEW,PASS),
-            //            UNIT=SYSDA,
-            //            SPACE=(TRK,(1,1)),
-            //            DCB=(RECFM=FB,LRECL=%d,BLKSIZE=%d)
+            %s
             //RESULT   DD DSN=%s,
             //            DISP=(NEW,CATLG,DELETE),
             //            UNIT=SYSDA,
-            //            SPACE=(TRK,(1,1)),
+            //            SPACE=(TRK,(5,2)),
             //            DCB=(RECFM=FB,LRECL=%d,BLKSIZE=%d)
             //SYSOUT   DD SYSOUT=A
-            //LOADVSAM EXEC PGM=IDCAMS,COND=(0,NE,WRITE)
-            //SYSPRINT DD SYSOUT=A
-            //INDD     DD DSN=&&MBREC,DISP=(OLD,DELETE)
-            //OUTVSAM  DD DSN=%s,DISP=SHR
-            //SYSIN    DD *
-              REPRO INFILE(INDD) OUTFILE(OUTVSAM)
-            /*
-            //SENDRES  EXEC PGM=IEBGENER,COND=(0,NE,LOADVSAM)
+            //SENDRES  EXEC PGM=IEBGENER,COND=(0,NE,MAIN)
             //SYSPRINT DD SYSOUT=A
             //SYSUT1   DD DSN=%s,DISP=SHR
             //SYSUT2   DD SYSOUT=Z
@@ -95,18 +69,11 @@ public class MainframeJclFactory {
                 properties.jobUser(),
                 properties.jobPassword(),
                 spec.programName(),
-                card1,
-                card2,
-
-                entityLength,
-                entityLength * 10,
-
+                inputCards,
+                datasetDds,
                 resultDataset,
                 RESULT_RECORD_LENGTH,
                 RESULT_RECORD_LENGTH * 10,
-
-                spec.targetDataset(),
-
                 resultDataset
         );
     }
@@ -340,5 +307,50 @@ public class MainframeJclFactory {
                             + inputRecord.length()
             );
         }
+    }
+
+    private String createInputCards(
+            String inputRecord
+    ) {
+
+        StringBuilder result =
+                new StringBuilder();
+
+        for (int start = 0;
+             start < inputRecord.length();
+             start += 80) {
+
+            int end =
+                    Math.min(
+                            start + 80,
+                            inputRecord.length()
+                    );
+
+            result.append(
+                    inputRecord,
+                    start,
+                    end
+            );
+
+            result.append('\n');
+        }
+
+        return result.toString();
+    }
+
+    private String createDatasetDdStatements(
+            MainframeOperationSpec spec
+    ) {
+
+        return spec.datasets()
+                .stream()
+                .map(dataset -> """
+                    //%s DD DSN=%s,DISP=%s
+                    """.formatted(
+                        dataset.ddName(),
+                        dataset.datasetName(),
+                        dataset.mode().disposition()
+                ))
+                .collect(Collectors.joining());
     }
 }

@@ -5,6 +5,7 @@ import com.monibank.mainframe.customer.api.CustomerResponse;
 import com.monibank.mainframe.customer.mainframe.CustomerMainframeOperations;
 import com.monibank.mainframe.customer.mainframe.CustomerRecordMapper;
 import com.monibank.mainframe.customer.mainframe.CustomerRecordParser;
+import com.monibank.mainframe.hercules.MainframeIdGenerator;
 import com.monibank.mainframe.hercules.MainframeOperationExecutor;
 import com.monibank.mainframe.hercules.MainframeRequestIdGenerator;
 import com.monibank.mainframe.model.MainframeDataRecord;
@@ -22,6 +23,7 @@ public class CustomerService {
     private final CustomerRecordParser customerRecordParser;
     private final MainframeRequestIdGenerator requestIdGenerator;
     private final MainframeOperationExecutor mainframeOperationExecutor;
+    private final MainframeIdGenerator mainframeIdGenerator;
 
     public MainframeResult createCustomer(
             CreateCustomerRequest request
@@ -30,9 +32,13 @@ public class CustomerService {
         String requestId =
                 requestIdGenerator.next();
 
+        String customerId =
+                "C" + mainframeIdGenerator.nextNumber();
+
         String inputRecord =
                 customerRecordMapper.toCreateRecord(
                         requestId,
+                        customerId,
                         request
                 );
 
@@ -83,6 +89,36 @@ public class CustomerService {
 
         return "CUSTOMER".equals(
                 record.entityType()
+        );
+    }
+
+    private String generateCustomerId() {
+
+        MainframeResult result =
+                getCustomers();
+
+        long maxId =
+                result.data()
+                        .stream()
+                        .filter(this::isCustomer)
+                        .map(MainframeDataRecord::payload)
+                        .map(customerRecordParser::parse)
+                        .map(CustomerResponse::customerId)
+                        .filter(id ->
+                                id != null
+                                        && id.startsWith("C")
+                        )
+                        .map(id ->
+                                id.substring(1)
+                        )
+                        .mapToLong(Long::parseLong)
+                        .max()
+                        .orElse(0L);
+
+        return "C"
+                + String.format(
+                "%012d",
+                maxId + 1
         );
     }
 }

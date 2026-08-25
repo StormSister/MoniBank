@@ -1,0 +1,21 @@
+//DELCUST JOB (TEST),'FILTER BAD CUSTOMER',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//FILTER   EXEC PGM=DELCUST
+//STEPLIB  DD DSN=HERC01.TEST.LOADLIB,DISP=SHR
+//INPUT    DD *
+9666257AC0000
+/*
+//CUSTFILE DD DSN=MBANK.CUST,
+//             DISP=SHR,
+//             AMP=('AMORG','RECFM=F')
+//OUTPUT   DD DSN=HERC01.TEST.CUSTFIX,
+//             DISP=(NEW,CATLG,DELETE),
+//             UNIT=SYSDA,
+//             SPACE=(TRK,(1,1)),
+//             DCB=(RECFM=FB,LRECL=119,BLKSIZE=1190)
+//SYSOUT   DD SYSOUT=*
+//

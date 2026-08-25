@@ -149,49 +149,63 @@ public class MainframeOperationExecutor {
         }
     }
 
-    private String createJcl(
-            String jobName,
-            String resultDataset,
-            MainframeOperationSpec spec,
-            String inputRecord
-    ) {
+//    private String createJcl(
+//            String jobName,
+//            String resultDataset,
+//            MainframeOperationSpec spec,
+//            String inputRecord
+//    ) {
+//
+//        return switch (spec.type()) {
+//
+//            case WRITE ->
+//                    jclFactory.create(
+//                            jobName,
+//                            resultDataset,
+//                            spec,
+//                            inputRecord
+//                    );
+//
+//            case READ_ONE ->
+//                    jclFactory.createReadOne(
+//                            jobName,
+//                            resultDataset,
+//                            spec,
+//                            inputRecord
+//                    );
+//
+//            case UPDATE ->
+//                    jclFactory.createUpdate(
+//                            jobName,
+//                            resultDataset,
+//                            spec,
+//                            inputRecord
+//                    );
+//
+//            case READ_ALL ->
+//                    jclFactory.createReadAll(
+//                            jobName,
+//                            resultDataset,
+//                            spec,
+//                            inputRecord
+//                    );
+//
+//        };
+//    }
+private String createJcl(
+        String jobName,
+        String resultDataset,
+        MainframeOperationSpec spec,
+        String inputRecord
+) {
 
-        return switch (spec.type()) {
-
-            case WRITE ->
-                    jclFactory.create(
-                            jobName,
-                            resultDataset,
-                            spec,
-                            inputRecord
-                    );
-
-            case READ_ONE ->
-                    jclFactory.createReadOne(
-                            jobName,
-                            resultDataset,
-                            spec,
-                            inputRecord
-                    );
-
-            case UPDATE ->
-                    jclFactory.createUpdate(
-                            jobName,
-                            resultDataset,
-                            spec,
-                            inputRecord
-                    );
-
-            case READ_ALL ->
-                    jclFactory.createReadAll(
-                            jobName,
-                            resultDataset,
-                            spec,
-                            inputRecord
-                    );
-
-        };
-    }
+    return jclFactory.create(
+            jobName,
+            resultDataset,
+            spec,
+            inputRecord
+    );
+}
 
     private List<String> receiveResult(
             String requestId,
