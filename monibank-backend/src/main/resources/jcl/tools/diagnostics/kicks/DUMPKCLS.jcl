@@ -1,0 +1,13 @@
+//DUMPKCLS JOB (TEST),'PRINT KICKS CLIST',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//PRINT    EXEC PGM=IEBGENER
+//SYSPRINT DD SYSOUT=*
+//SYSUT1   DD DSN=HERC01.KICKSSYS.V1R5M0.CLIST(KICKS),
+//             DISP=SHR
+//SYSUT2   DD SYSOUT=*
+//SYSIN    DD DUMMY
+//

@@ -309,7 +309,7 @@ private void connectAndRead()
         return rawLine
                 .replace("\f", "")
                 .replace("\r", "")
-                .strip();
+                .stripLeading();
     }
 
     private void sleepBeforeReconnect() {

@@ -12,19 +12,24 @@
       * CICS RESPONSE CODES                                       *
       *-----------------------------------------------------------*
 
-       01  CICS-RESP-NORMAL        PIC S9(8) COMP VALUE +0.
-       01  CICS-RESP-NOTFND        PIC S9(8) COMP VALUE +13.
-       01  CICS-RESP-DUPREC        PIC S9(8) COMP VALUE +14.
-       01  CICS-RESP-DUPKEY        PIC S9(8) COMP VALUE +15.
-       01  CICS-RESP-NOTOPEN       PIC S9(8) COMP VALUE +19.
-       01  CICS-RESP-DISABLED      PIC S9(8) COMP VALUE +84.
+       01  CICS-RESP-NORMAL        PIC S9(4) COMP VALUE +0.
+       01  CICS-RESP-DUPREC        PIC S9(4) COMP VALUE +14.
+       01  CICS-RESP-DUPKEY        PIC S9(4) COMP VALUE +15.
 
-       01  WS-RESP                 PIC S9(8) COMP VALUE +0.
+       01  WS-RESP                 PIC S9(4) COMP VALUE +0.
+       01  WS-RESP2                PIC S9(4) COMP VALUE +0.
        01  WS-SEQ-LENGTH           PIC S9(4) COMP VALUE +32.
        01  WS-CUSTOMER-LENGTH      PIC S9(4) COMP VALUE +119.
 
+       01  WS-WRITE-ERROR.
+           05 FILLER               PIC X(2) VALUE 'R='.
+           05 WS-RESP-DISPLAY      PIC 9(4).
+           05 FILLER               PIC X(4) VALUE ';R2='.
+           05 WS-RESP2-DISPLAY     PIC 9(4).
+           05 FILLER               PIC X(6) VALUE SPACES.
+
       *-----------------------------------------------------------*
-      * CREATE CUSTOMER REQUEST - 113 BYTES                        *
+      * CREATE CUSTOMER REQUEST - 113 BYTES                       *
       *-----------------------------------------------------------*
 
        01  REQUEST-RECORD.
@@ -37,17 +42,7 @@
            05 REQUEST-CREATED-AT   PIC X(14).
 
       *-----------------------------------------------------------*
-      * ALTERNATE KEY: COUNTRY + NATIONAL ID                       *
-      *-----------------------------------------------------------*
-
-       01  NATIONAL-KEY.
-           05 NATIONAL-COUNTRY     PIC X(2).
-           05 NATIONAL-NUMBER      PIC X(11).
-
-       01  FIRST-CUSTOMER-KEY      PIC X(13).
-
-      *-----------------------------------------------------------*
-      * MBANK.SEQ RECORD - 32 BYTES                                *
+      * MBANK.SEQ RECORD - 32 BYTES                               *
       *-----------------------------------------------------------*
 
        01  SEQUENCE-KEY            PIC X(12)
@@ -63,7 +58,7 @@
            05 GENERATED-NUMBER     PIC 9(12).
 
       *-----------------------------------------------------------*
-      * MBANK.CUST RECORD - 119 BYTES                              *
+      * MBANK.CUST RECORD - 119 BYTES                             *
       *-----------------------------------------------------------*
 
        01  CUSTOMER-RECORD.
@@ -77,7 +72,7 @@
            05 CUSTOMER-CREATED-AT  PIC X(14).
 
       *-----------------------------------------------------------*
-      * MONIBANK RESPONSE - 160 BYTES                              *
+      * MONIBANK RESPONSE - 160 BYTES                             *
       *-----------------------------------------------------------*
 
        01  RESULT-RECORD.
@@ -176,73 +171,9 @@
 
            MOVE REQUEST-ID TO RR-REQUEST-ID.
 
-           MOVE REQUEST-COUNTRY
-               TO NATIONAL-COUNTRY.
-
-           MOVE REQUEST-NATIONAL-ID
-               TO NATIONAL-NUMBER.
-
       *-----------------------------------------------------------*
-      * CHECK ALTERNATE INDEX                                      *
-      * NORMAL   = CUSTOMER ALREADY EXISTS                         *
-      * NOTFND   = WE MAY CONTINUE                                 *
-      *-----------------------------------------------------------*
-
-           MOVE 119 TO WS-CUSTOMER-LENGTH.
-
-           EXEC CICS
-               READ DATASET('NATPATH')
-               INTO(CUSTOMER-RECORD)
-               RIDFLD(NATIONAL-KEY)
-               LENGTH(WS-CUSTOMER-LENGTH)
-               RESP(WS-RESP)
-           END-EXEC.
-
-           IF WS-RESP = CICS-RESP-NORMAL
-               GO TO DUPLICATE-NATIONAL-ID.
-
-           IF WS-RESP = CICS-RESP-NOTFND
-               GO TO READ-CUSTOMER-SEQUENCE.
-
-           IF WS-RESP = CICS-RESP-NOTOPEN
-               GO TO CHECK-FIRST-CUSTOMER.
-
-           IF WS-RESP = CICS-RESP-DISABLED
-               GO TO CHECK-FIRST-CUSTOMER.
-
-           GO TO NATIONAL-READ-ERROR.
-
-      *-----------------------------------------------------------*
-      * EMPTY AIX BOOTSTRAP                                       *
-      * BYPASS NATPATH ONLY WHEN CUSTFILE IS REALLY EMPTY.        *
-      *-----------------------------------------------------------*
-
-       CHECK-FIRST-CUSTOMER.
-
-           MOVE LOW-VALUES TO FIRST-CUSTOMER-KEY.
-
-           EXEC CICS
-               STARTBR DATASET('CUSTFILE')
-               RIDFLD(FIRST-CUSTOMER-KEY)
-               GTEQ
-               RESP(WS-RESP)
-           END-EXEC.
-
-           IF WS-RESP = CICS-RESP-NOTFND
-               GO TO READ-CUSTOMER-SEQUENCE.
-
-           IF WS-RESP NOT = CICS-RESP-NORMAL
-               GO TO NATIONAL-READ-ERROR.
-
-           EXEC CICS
-               ENDBR DATASET('CUSTFILE')
-               RESP(WS-RESP)
-           END-EXEC.
-
-           GO TO NATIONAL-READ-ERROR.
-
-      *-----------------------------------------------------------*
-      * LOCK AND READ CUSTOMER SEQUENCE                            *
+      * THE UNIQUE AIX IS THE AUTHORITY FOR COUNTRY + NATIONAL ID. *
+      * THE WRITE ATOMICALLY ACCEPTS OR REJECTS THE CUSTOMER.      *
       *-----------------------------------------------------------*
 
        READ-CUSTOMER-SEQUENCE.
@@ -261,12 +192,16 @@
            IF WS-RESP NOT = CICS-RESP-NORMAL
                GO TO SEQUENCE-READ-ERROR.
 
-      * USE CURRENT VALUE FOR CUSTOMER ID.
+      *-----------------------------------------------------------*
+      * USE CURRENT SEQUENCE VALUE FOR CUSTOMER ID.                *
+      *-----------------------------------------------------------*
 
            MOVE 'C' TO GENERATED-PREFIX.
            MOVE SEQUENCE-NUMBER TO GENERATED-NUMBER.
 
-      * ADVANCE SEQUENCE FOR THE NEXT CUSTOMER.
+      *-----------------------------------------------------------*
+      * ADVANCE SEQUENCE FOR THE NEXT CUSTOMER.                    *
+      *-----------------------------------------------------------*
 
            ADD 1 TO SEQUENCE-NUMBER.
            MOVE 32 TO WS-SEQ-LENGTH.
@@ -282,7 +217,7 @@
                GO TO SEQUENCE-WRITE-ERROR.
 
       *-----------------------------------------------------------*
-      * BUILD CUSTOMER RECORD                                      *
+      * BUILD CUSTOMER RECORD                                     *
       *-----------------------------------------------------------*
 
            MOVE SPACES TO CUSTOMER-RECORD.
@@ -312,11 +247,13 @@
                TO CUSTOMER-CREATED-AT.
 
       *-----------------------------------------------------------*
-      * WRITE BASE RECORD.                                         *
-      * AIX WITH UPGRADE UPDATES NATPATH AUTOMATICALLY.            *
+      * WRITE BASE RECORD.                                        *
+      * UNIQUE AIX WITH UPGRADE IS UPDATED AUTOMATICALLY.          *
       *-----------------------------------------------------------*
 
            MOVE 119 TO WS-CUSTOMER-LENGTH.
+           MOVE 0 TO WS-RESP.
+           MOVE 0 TO WS-RESP2.
 
            EXEC CICS
                WRITE DATASET('CUSTFILE')
@@ -324,6 +261,7 @@
                RIDFLD(CUSTOMER-ID)
                LENGTH(WS-CUSTOMER-LENGTH)
                RESP(WS-RESP)
+               RESP2(WS-RESP2)
            END-EXEC.
 
            IF WS-RESP = CICS-RESP-DUPREC
@@ -336,7 +274,7 @@
                GO TO CUSTOMER-WRITE-ERROR.
 
       *-----------------------------------------------------------*
-      * SUCCESS                                                    *
+      * SUCCESS                                                   *
       *-----------------------------------------------------------*
 
            MOVE 'S' TO RR-TYPE.
@@ -364,21 +302,6 @@
 
            MOVE 'E' TO RR-TYPE.
            MOVE 'I' TO RR-STATUS.
-           GO TO SEND-RESULT.
-
-       DUPLICATE-NATIONAL-ID.
-
-           MOVE 'E' TO RR-TYPE.
-           MOVE CUSTOMER-ID TO RR-ENTITY-ID.
-           MOVE CUSTOMER-STATUS TO RR-STATUS.
-           MOVE 'DUPNATIONALID' TO RR-ERROR-CODE.
-           GO TO SEND-RESULT.
-
-       NATIONAL-READ-ERROR.
-
-           MOVE 'E' TO RR-TYPE.
-           MOVE 'I' TO RR-STATUS.
-           MOVE 'NATREADFAIL' TO RR-ERROR-CODE.
            GO TO SEND-RESULT.
 
        SEQUENCE-READ-ERROR.
@@ -416,7 +339,10 @@
            MOVE 'E' TO RR-TYPE.
            MOVE GENERATED-CUSTOMER-ID TO RR-ENTITY-ID.
            MOVE 'I' TO RR-STATUS.
-           MOVE 'CUSTOMERWRITEFAIL' TO RR-ERROR-CODE.
+           MOVE WS-RESP TO WS-RESP-DISPLAY.
+           MOVE WS-RESP2 TO WS-RESP2-DISPLAY.
+           MOVE WS-WRITE-ERROR TO RR-ERROR-CODE.
+           GO TO SEND-RESULT.
 
        SEND-RESULT.
 
