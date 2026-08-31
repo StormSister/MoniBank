@@ -1,0 +1,206 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. MBRESULT.
+
+       ENVIRONMENT DIVISION.
+
+       DATA DIVISION.
+       WORKING-STORAGE SECTION.
+
+      * ONE PHYSICAL SPOOL LINE CONTAINS:
+      * CC + MBP; + REQUEST-ID + ;PART; + 80 PAYLOAD BYTES.
+       01  WS-FRAME-LENGTH         PIC S9(8) COMP VALUE +96.
+       01  WS-SPOOL-NODE           PIC X(8) VALUE '*'.
+       01  WS-SPOOL-USER           PIC X(8) VALUE '*'.
+       01  WS-SPOOL-CLASS          PIC X VALUE 'Z'.
+
+       01  WS-CLOSE-RESP           PIC S9(8) COMP.
+       01  WS-CLOSE-RESP2          PIC S9(8) COMP.
+
+      * WORKING COPY OF THE STANDARD LOGICAL 160-BYTE RECORD.
+       01  WS-LOGICAL-RECORD       PIC X(160).
+
+       01  WS-LOGICAL-PARTS
+           REDEFINES WS-LOGICAL-RECORD.
+           05 WS-LOGICAL-PART-1    PIC X(80).
+           05 WS-LOGICAL-PART-2    PIC X(80).
+
+       01  WS-LOGICAL-KEY
+           REDEFINES WS-LOGICAL-RECORD.
+           05 FILLER               PIC X(15).
+           05 WS-LOGICAL-REQUEST-ID PIC X(8).
+           05 FILLER               PIC X(137).
+
+      * THE LEADING SPACE IS A SAFE ASA CARRIAGE-CONTROL BYTE.
+      * JAVA ALSO ACCEPTS THE FRAME IF THAT BYTE IS NOT REMOVED.
+       01  WS-SPOOL-FRAME.
+           05 WS-FRAME-CONTROL     PIC X VALUE SPACE.
+           05 WS-FRAME-PREFIX      PIC X(3) VALUE 'MBP'.
+           05 WS-FRAME-SEP-0       PIC X VALUE ';'.
+           05 WS-FRAME-REQUEST-ID  PIC X(8).
+           05 WS-FRAME-SEP-1       PIC X VALUE ';'.
+           05 WS-FRAME-PART        PIC X.
+           05 WS-FRAME-SEP-2       PIC X VALUE ';'.
+           05 WS-FRAME-PAYLOAD     PIC X(80).
+
+       LINKAGE SECTION.
+
+       01  DFHCOMMAREA.
+           COPY MBRSCA.
+
+       PROCEDURE DIVISION.
+
+       MAIN-PROCESS.
+
+      * MBRSCA HAS EXACTLY 185 BYTES.
+           IF EIBCALEN NOT = 185
+               EXEC CICS RETURN END-EXEC.
+
+           MOVE SPACES TO MBR-CALL-RETURN-CODE.
+           MOVE ZERO TO MBR-CALL-RESP
+                        MBR-CALL-RESP2.
+
+           IF MBR-CALL-CONTROL NOT = 'M'
+              AND MBR-CALL-CONTROL NOT = 'F'
+               GO TO BAD-CONTROL.
+
+      * OPEN ONE SYSOUT FOR THE WHOLE LOGICAL RESPONSE.
+           IF MBR-CALL-TOKEN = SPACES
+               GO TO OPEN-SPOOL.
+
+           GO TO WRITE-RECORD.
+
+       OPEN-SPOOL.
+
+           EXEC CICS SPOOLOPEN OUTPUT
+               TOKEN(MBR-CALL-TOKEN)
+               NODE(WS-SPOOL-NODE)
+               CLASS(WS-SPOOL-CLASS)
+               USERID(WS-SPOOL-USER)
+               RESP(MBR-CALL-RESP)
+               RESP2(MBR-CALL-RESP2)
+           END-EXEC.
+
+           IF MBR-CALL-RESP NOT = ZERO
+               MOVE 'OPENERR' TO MBR-CALL-RETURN-CODE
+               GO TO FINISH-PROGRAM.
+
+           GO TO WRITE-RECORD.
+
+       WRITE-RECORD.
+
+      * SPLIT ONE LOGICAL X(160) INTO TWO PHYSICAL SPOOL FRAMES.
+           MOVE MBR-CALL-RECORD TO WS-LOGICAL-RECORD.
+
+           MOVE SPACE TO WS-FRAME-CONTROL.
+           MOVE 'MBP' TO WS-FRAME-PREFIX.
+           MOVE ';' TO WS-FRAME-SEP-0
+                       WS-FRAME-SEP-1
+                       WS-FRAME-SEP-2.
+           MOVE WS-LOGICAL-REQUEST-ID
+             TO WS-FRAME-REQUEST-ID.
+
+           MOVE '1' TO WS-FRAME-PART.
+           MOVE WS-LOGICAL-PART-1 TO WS-FRAME-PAYLOAD.
+           PERFORM WRITE-FRAME THRU WRITE-FRAME-EXIT.
+
+           IF MBR-CALL-RESP NOT = ZERO
+               MOVE 'WRIT1ERR' TO MBR-CALL-RETURN-CODE
+               GO TO WRITE-ERROR.
+
+           MOVE '2' TO WS-FRAME-PART.
+           MOVE WS-LOGICAL-PART-2 TO WS-FRAME-PAYLOAD.
+           PERFORM WRITE-FRAME THRU WRITE-FRAME-EXIT.
+
+           IF MBR-CALL-RESP NOT = ZERO
+               MOVE 'WRIT2ERR' TO MBR-CALL-RETURN-CODE
+               GO TO WRITE-ERROR.
+
+      * M MEANS THAT MORE RECORDS WILL FOLLOW.
+      * D RECORDS USE M WHILE THE RESPONSE IS NOT FINISHED.
+           IF MBR-CALL-MORE
+               MOVE 'OK' TO MBR-CALL-RETURN-CODE
+               GO TO FINISH-PROGRAM.
+
+      * F MEANS THAT THE CURRENT S OR E RECORD IS FINAL.
+           GO TO CLOSE-FINAL.
+
+       CLOSE-FINAL.
+
+           MOVE ZERO TO MBR-CALL-RESP
+                        MBR-CALL-RESP2.
+
+           EXEC CICS SPOOLCLOSE
+               TOKEN(MBR-CALL-TOKEN)
+               RESP(MBR-CALL-RESP)
+               RESP2(MBR-CALL-RESP2)
+           END-EXEC.
+
+           IF MBR-CALL-RESP NOT = ZERO
+               MOVE 'CLOSERR' TO MBR-CALL-RETURN-CODE
+               GO TO FINISH-PROGRAM.
+
+           MOVE SPACES TO MBR-CALL-TOKEN.
+           MOVE 'OK' TO MBR-CALL-RETURN-CODE.
+           GO TO FINISH-PROGRAM.
+
+       BAD-CONTROL.
+
+           MOVE 'BADCTRL' TO MBR-CALL-RETURN-CODE.
+
+      * CLOSE AN OPEN SYSOUT AFTER AN INVALID CALL.
+           IF MBR-CALL-TOKEN = SPACES
+               GO TO FINISH-PROGRAM.
+
+           PERFORM CLOSE-OPEN-SPOOL
+               THRU CLOSE-OPEN-SPOOL-EXIT.
+
+           MOVE WS-CLOSE-RESP TO MBR-CALL-RESP.
+           MOVE WS-CLOSE-RESP2 TO MBR-CALL-RESP2.
+           GO TO FINISH-PROGRAM.
+
+       WRITE-ERROR.
+
+      * KEEP THE ORIGINAL SPOOLWRITE RESP AND RESP2.
+      * KICKS CANNOT DELETE AN INCOMPLETE SYSOUT.
+           PERFORM CLOSE-OPEN-SPOOL
+               THRU CLOSE-OPEN-SPOOL-EXIT.
+           GO TO FINISH-PROGRAM.
+
+       CLOSE-OPEN-SPOOL.
+
+           MOVE ZERO TO WS-CLOSE-RESP
+                        WS-CLOSE-RESP2.
+
+           EXEC CICS SPOOLCLOSE
+               TOKEN(MBR-CALL-TOKEN)
+               RESP(WS-CLOSE-RESP)
+               RESP2(WS-CLOSE-RESP2)
+           END-EXEC.
+
+           IF WS-CLOSE-RESP = ZERO
+               MOVE SPACES TO MBR-CALL-TOKEN.
+
+       CLOSE-OPEN-SPOOL-EXIT.
+
+           EXIT.
+
+       WRITE-FRAME.
+
+           MOVE ZERO TO MBR-CALL-RESP
+                        MBR-CALL-RESP2.
+
+           EXEC CICS SPOOLWRITE
+               TOKEN(MBR-CALL-TOKEN)
+               FROM(WS-SPOOL-FRAME)
+               FLENGTH(WS-FRAME-LENGTH)
+               RESP(MBR-CALL-RESP)
+               RESP2(MBR-CALL-RESP2)
+           END-EXEC.
+
+       WRITE-FRAME-EXIT.
+
+           EXIT.
+
+       FINISH-PROGRAM.
+
+           EXEC CICS RETURN END-EXEC.

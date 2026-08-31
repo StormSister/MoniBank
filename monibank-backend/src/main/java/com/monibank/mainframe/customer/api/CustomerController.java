@@ -1,11 +1,16 @@
 package com.monibank.mainframe.customer.api;
 
-
 import com.monibank.mainframe.customer.CustomerService;
-import com.monibank.mainframe.model.MainframeResult;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -17,7 +22,7 @@ public class CustomerController {
     private final CustomerService customerService;
 
     @PostMapping
-    public ResponseEntity<MainframeResult> createCustomer(
+    public ResponseEntity<CustomerResponse> createCustomer(
             @RequestBody CreateCustomerRequest request
     ) {
 
@@ -26,8 +31,18 @@ public class CustomerController {
         );
     }
 
+    @PostMapping("/get")
+    public ResponseEntity<CustomerResponse> getCustomer(
+            @Valid @RequestBody GetCustomerRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                customerService.getCustomer(request)
+        );
+    }
+
     @GetMapping
-    public ResponseEntity<MainframeResult> getCustomers() {
+    public ResponseEntity<List<CustomerResponse>> getCustomers() {
 
         return ResponseEntity.ok(
                 customerService.getCustomers()
@@ -35,7 +50,7 @@ public class CustomerController {
     }
 
     @PatchMapping("/{customerId}/status")
-    public ResponseEntity<MainframeResult> changeStatus(
+    public ResponseEntity<CustomerResponse> changeStatus(
             @PathVariable String customerId,
             @RequestBody ChangeCustomerStatusRequest request
     ) {

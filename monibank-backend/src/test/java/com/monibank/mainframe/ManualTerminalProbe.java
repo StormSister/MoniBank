@@ -127,13 +127,40 @@ class ManualTerminalProbe {
                 );
                 mapReached = true;
 
-                System.out.println("=== MBGW ===");
+                System.out.println("=== MBGW BEFORE REQUEST ===");
                 printScreen(screen, secret);
-                System.out.println(
-                        "OK: Java opened MONIBANK API."
+
+                MbgwRequest existingCustomer = new MbgwRequest(
+                        "GETCUST",
+                        "TEST0001",
+                        "C000000000006"
                 );
-                System.out.println(
-                        "Didn't send any bank operations."
+                MbgwRequest missingCustomer = new MbgwRequest(
+                        "GETCUST",
+                        "TEST0002",
+                        "C000000000001"
+                );
+
+                List<String> success = executeMbgwRequest(
+                        terminal, existingCustomer, secret
+                );
+                assertSuccessfulGetCustomer(
+                        success, existingCustomer, secret
+                );
+
+                prepareMapForNextRequest(
+                        terminal, existingCustomer.requestId(), secret
+                );
+
+                List<String> notFound = executeMbgwRequest(
+                        terminal, missingCustomer, secret
+                );
+                assertCustomerNotFound(
+                        notFound, missingCustomer, secret
+                );
+
+                prepareMapForNextRequest(
+                        terminal, missingCustomer.requestId(), secret
                 );
 
             } finally {
@@ -208,70 +235,131 @@ class ManualTerminalProbe {
         }
     }
 
-    private static final String TEST_REQUEST_ID = "TEST0001";
-    private static final String EXISTING_CUSTOMER_ID = "C000000000006";
-
-    private static void executeGetCustomer(
-            ProbeEmulator terminal,
+    private static List<String> executeMbgwRequest(
+            ProbeEmulator terminal, MbgwRequest request,
             Pattern secret
     ) throws InterruptedException {
-        System.out.println("Filling MBGW for GETCUST...");
+        System.out.println(
+                "Filling MBGW for " + request.operation()
+                        + " [" + request.requestId() + "]..."
+        );
 
         terminal.command("Wait(15,Unlock)");
 
         // Po wyświetleniu mapy kursor powinien być w polu OPERATION.
-        terminal.typeKeys("GETCUST");
+        terminal.typeKeys(request.operation());
 
         terminal.command("Tab()");
-        terminal.typeKeys(TEST_REQUEST_ID);
+        terminal.typeKeys(request.requestId());
 
         terminal.command("Tab()");
-        terminal.typeKeys(
-                String.format("%04d", EXISTING_CUSTOMER_ID.length())
+        terminal.typeKeys(request.formattedInputLength());
+
+        terminal.command("Tab()");
+        terminal.typeKeys(request.input());
+
+        System.out.println(
+                "Executing " + request.operation()
+                        + " [" + request.requestId() + "]..."
         );
-
-        terminal.command("Tab()");
-        terminal.typeKeys(EXISTING_CUSTOMER_ID);
-
-        System.out.println("Executing GETCUST...");
         terminal.command("Enter()");
 
-        List<String> result = terminal.await(
-                screen -> contains(screen, "SUCCESS")
-                        && contains(screen, TEST_REQUEST_ID)
-                        && contains(screen, EXISTING_CUSTOMER_ID)
-                        && contains(screen, ";A;OK"),
+        return terminal.await(
+                screen -> isCompletedMbgwResponse(screen)
+                        && contains(screen, request.requestId()),
                 secret
         );
+    }
 
-        System.out.println("=== GETCUST RESULT ===");
+    private static void assertSuccessfulGetCustomer(
+            List<String> result, MbgwRequest request,
+            Pattern secret
+    ) {
+        if (!contains(result, "SUCCESS")
+                || !contains(result, request.input())
+                || !contains(result, ";A;OK")) {
+            throw new IllegalStateException(
+                    "GETCUST did not return the expected customer."
+            );
+        }
+
+        System.out.println("=== GETCUST SUCCESS RESULT ===");
         printScreen(result, secret);
 
         System.out.println(
                 "OK: GETCUST returned existing customer "
-                        + EXISTING_CUSTOMER_ID
+                        + request.input()
         );
     }
 
-    void typeKeys(String text) {
-        if (text == null || text.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "Text entered with Key() cannot be empty."
+    private static void assertCustomerNotFound(
+            List<String> result, MbgwRequest request,
+            Pattern secret
+    ) {
+        if (!contains(result, "ERROR")
+                || !contains(result, request.input())
+                || !contains(result, "NOTFOUND")) {
+            throw new IllegalStateException(
+                    "GETCUST did not return the expected NOTFOUND result."
             );
         }
 
-        command("Wait(15,Unlock)");
+        System.out.println("=== GETCUST NOTFOUND RESULT ===");
+        printScreen(result, secret);
 
-        for (int i = 0; i < text.length(); i++) {
-            char character = text.charAt(i);
+        System.out.println(
+                "OK: GETCUST returned NOTFOUND for " + request.input()
+        );
+    }
 
-            if (!Character.isLetterOrDigit(character)) {
+    private static void prepareMapForNextRequest(
+            ProbeEmulator terminal, String completedRequestId,
+            Pattern secret
+    ) throws InterruptedException {
+        System.out.println(
+                "MBGW [" + completedRequestId
+                        + "]: Enter for a new request."
+        );
+        terminal.command("Wait(15,Unlock)");
+        terminal.command("Enter()");
+
+        List<String> ready = terminal.await(
+                screen -> isReadyMonibankMap(screen)
+                        && !contains(screen, completedRequestId),
+                secret
+        );
+
+        System.out.println("OK: MBGW is ready for the next request.");
+        printScreen(ready, secret);
+    }
+
+    private record MbgwRequest(
+            String operation,
+            String requestId,
+            String input
+    ) {
+        MbgwRequest {
+            requireAlphanumeric("operation", operation, 1, 8);
+            requireAlphanumeric("requestId", requestId, 1, 8);
+            requireAlphanumeric("input", input, 1, 512);
+        }
+
+        String formattedInputLength() {
+            return String.format("%04d", input.length());
+        }
+
+        private static void requireAlphanumeric(
+                String name, String value, int minimum, int maximum
+        ) {
+            if (value == null
+                    || value.length() < minimum
+                    || value.length() > maximum
+                    || !value.chars().allMatch(Character::isLetterOrDigit)) {
                 throw new IllegalArgumentException(
-                        "Unsupported Key() character at position " + i
+                        name + " must contain " + minimum + "-" + maximum
+                                + " alphanumeric characters."
                 );
             }
-
-            command("Key(" + Character.toUpperCase(character) + ")");
         }
     }
 
@@ -433,6 +521,19 @@ class ManualTerminalProbe {
                 && contains(screen, "INPUT LENGTH:");
     }
 
+    private static boolean isCompletedMbgwResponse(List<String> screen) {
+        return isMonibankMap(screen)
+                && (contains(screen, "SUCCESS")
+                || contains(screen, "ERROR"));
+    }
+
+    private static boolean isReadyMonibankMap(List<String> screen) {
+        return isMonibankMap(screen)
+                && contains(screen, "READY")
+                && !contains(screen, "SUCCESS")
+                && !contains(screen, "ERROR");
+    }
+
     private static boolean isLoginEntry(List<String> screen) {
         return isLogon(screen)
                 || screen.stream().anyMatch(
@@ -534,24 +635,52 @@ class ManualTerminalProbe {
             command("Enter()");
         }
 
+        void typeKeys(String text) {
+            if (text == null || text.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "Text entered with Key() cannot be empty."
+                );
+            }
+
+            command("Wait(15,Unlock)");
+
+            for (int i = 0; i < text.length(); i++) {
+                char character = Character.toUpperCase(text.charAt(i));
+
+                if (!Character.isLetterOrDigit(character)) {
+                    throw new IllegalArgumentException(
+                            "Unsupported Key() character at position " + i
+                    );
+                }
+
+                command("Key(" + character + ")");
+            }
+        }
+
         // Wylacznie identyfikatory transakcji; nie sluzy do hasel.
         void submitTransaction(String transaction) {
-            if (!transaction.equals("MBGW") && !transaction.equals("KSSF")) {
-                throw new IllegalArgumentException("Unknown transaction.");
+            if (!"MBGW".equals(transaction)
+                    && !"KSSF".equals(transaction)) {
+                throw new IllegalArgumentException(
+                        "Unknown KICKS transaction: " + transaction
+                );
             }
-            command("Wait(15,Unlock)");
-            for (int i = 0; i < transaction.length(); i++) {
-                command("Key(" + transaction.charAt(i) + ")");
-            }
+
+            typeKeys(transaction);
 
             // Nie naciskamy Enter, jesli nie potwierdzimy wszystkich liter.
             List<String> typed = screen();
-            if (typed.stream().noneMatch(line -> line.trim().equals(transaction))) {
+            boolean transactionVisible = typed.stream()
+                    .map(String::trim)
+                    .anyMatch(transaction::equals);
+
+            if (!transactionVisible) {
                 throw new IllegalStateException(
-                        "no confirmation for typing " + transaction
-                                + ". No Enter command."
+                        "No confirmation for typing " + transaction
+                                + ". Enter was not sent."
                 );
             }
+
             command("Enter()");
         }
 
