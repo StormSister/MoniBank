@@ -51,26 +51,42 @@ public record MbgwRequest(
         }
     }
 
-    private static void requirePrintableAsciiInput(String input) {
-        if (input == null
-                || input.isEmpty()
-                || input.length() > MAX_INPUT_LENGTH) {
+    private static String requirePrintableAsciiInput(
+            String input
+    ) {
+
+        if (input == null) {
             throw new IllegalArgumentException(
-                    "input must contain 1-"
-                            + MAX_INPUT_LENGTH
-                            + " characters."
+                    "input cannot be null."
             );
         }
 
-        boolean printableAscii = input.chars()
-                .allMatch(character ->
-                        character >= 32 && character <= 126
+        if (input.length() > 512) {
+            throw new IllegalArgumentException(
+                    "input cannot exceed 512 characters."
+            );
+        }
+
+        for (int position = 0;
+             position < input.length();
+             position++) {
+
+            char character =
+                    input.charAt(position);
+
+            if (character < 32
+                    || character > 126) {
+
+                throw new IllegalArgumentException(
+                        "input must contain printable ASCII "
+                                + "characters only; invalid character "
+                                + "at position "
+                                + position
+                                + "."
                 );
-
-        if (!printableAscii) {
-            throw new IllegalArgumentException(
-                    "input must contain printable ASCII characters only."
-            );
+            }
         }
+
+        return input;
     }
 }

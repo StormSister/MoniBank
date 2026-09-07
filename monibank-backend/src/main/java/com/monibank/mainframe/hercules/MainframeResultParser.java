@@ -14,6 +14,13 @@ public class MainframeResultParser {
     private static final String PREFIX = "MBR;";
     private static final String SEPARATOR = ";";
 
+    /*
+     * MBR data records contain a fixed-width X(119) business payload.
+     * A complete 160-byte MBR record may additionally carry X(17)
+     * protocol padding after that payload.
+     */
+    private static final int DATA_PAYLOAD_LENGTH = 119;
+
     public MainframeResult parse(List<String> records) {
 
         if (records == null || records.isEmpty()) {
@@ -35,10 +42,11 @@ public class MainframeResultParser {
             }
 
             /*
-             * NIE używamy trim().
+             * Do not trim the end of a record. Trailing spaces may
+             * belong to its fixed-width business payload.
              *
-             * Rekord D może zawierać fixed-width payload.
-             * Trailing spaces są częścią rekordu mainframe.
+             * stripLeading() removes only transport/ASA padding
+             * placed before the MBR prefix.
              */
             String record =
                     rawRecord
@@ -51,8 +59,9 @@ public class MainframeResultParser {
             }
 
             /*
-             * Potrzebujemy tylko pierwszych kilku pól,
-             * żeby rozpoznać typ.
+             * Only the first fields are needed to identify the
+             * record type. Limiting the split protects semicolons
+             * that may occur inside the fixed-width payload.
              */
             String[] prefixParts =
                     record.split(
@@ -124,7 +133,6 @@ public class MainframeResultParser {
          * 5 status
          * 6 code
          */
-
         String[] parts =
                 record.split(
                         SEPARATOR,
@@ -160,10 +168,11 @@ public class MainframeResultParser {
     ) {
 
         /*
-         * MBR;D;CUSTOMER;Rxxxxxxx;<fixed-width payload>
+         * MBR;D;CUSTOMER;Rxxxxxxx;<X(119) payload><X(17) filler>
          *
-         * Split robimy maksymalnie na 5 części.
-         * Dzięki temu cały payload zostaje nienaruszony.
+         * The split is limited to five elements, so the complete
+         * fixed-width tail remains untouched even if the payload
+         * itself contains a semicolon.
          */
         String[] parts =
                 record.split(
@@ -181,18 +190,28 @@ public class MainframeResultParser {
         String entityType =
                 parts[2].trim();
 
+        String payloadWithPadding =
+                parts[4];
+
+        if (payloadWithPadding.length()
+                < DATA_PAYLOAD_LENGTH) {
+            throw new IllegalArgumentException(
+                    "Invalid MBR data payload length: "
+                            + payloadWithPadding.length()
+                            + "; expected at least "
+                            + DATA_PAYLOAD_LENGTH
+            );
+        }
+
         /*
-         * CELOWO bez trim().
-         *
-         * Dla TCP może mieć dokładnie 119 znaków.
-         * Dla fallbacku może mieć dodatkowy padding
-         * wynikający z LRECL=160.
-         *
-         * Parser konkretnej encji bierze swoją
-         * właściwą długość rekordu.
+         * Expose only the business payload to entity parsers.
+         * The remaining characters belong to the MBR envelope.
          */
         String payload =
-                parts[4];
+                payloadWithPadding.substring(
+                        0,
+                        DATA_PAYLOAD_LENGTH
+                );
 
         return new MainframeDataRecord(
                 entityType,

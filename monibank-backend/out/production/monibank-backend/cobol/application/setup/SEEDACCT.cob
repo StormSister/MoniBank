@@ -1,0 +1,61 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SEEDACCT.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+           SELECT OUTPUT-FILE
+               ASSIGN TO UT-S-OUTPUT.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD  OUTPUT-FILE
+           LABEL RECORDS ARE OMITTED.
+
+       01  OUTPUT-RECORD           PIC X(119).
+
+       WORKING-STORAGE SECTION.
+
+       01  ACCOUNT-RECORD.
+           05 ACCOUNT-STATUS          PIC X.
+           05 ACCOUNT-ID              PIC X(13).
+           05 ACCOUNT-CUSTOMER-ID     PIC X(13).
+           05 ACCOUNT-IBAN            PIC X(34).
+           05 ACCOUNT-TYPE            PIC X(2).
+           05 ACCOUNT-CURRENCY        PIC X(3).
+           05 ACCOUNT-BALANCE         PIC S9(13)V99 COMP-3.
+           05 ACCOUNT-OVERDRAFT       PIC S9(13)V99 COMP-3.
+           05 ACCOUNT-BLOCKED         PIC S9(13)V99 COMP-3.
+           05 ACCOUNT-CREATED-AT      PIC X(14).
+           05 ACCOUNT-UPDATED-AT      PIC X(14).
+           05 ACCOUNT-FILLER          PIC X.
+
+       PROCEDURE DIVISION.
+
+       MAIN-PROCESS.
+
+           OPEN OUTPUT OUTPUT-FILE.
+
+           MOVE 'A' TO ACCOUNT-STATUS.
+           MOVE 'A000000000000' TO ACCOUNT-ID.
+           MOVE 'C000000000006' TO ACCOUNT-CUSTOMER-ID.
+           MOVE 'DE89370400440532013000' TO ACCOUNT-IBAN.
+           MOVE 'ST' TO ACCOUNT-TYPE.
+           MOVE 'EUR' TO ACCOUNT-CURRENCY.
+           MOVE ZERO TO ACCOUNT-BALANCE
+                        ACCOUNT-OVERDRAFT
+                        ACCOUNT-BLOCKED.
+           MOVE '20260904000000' TO ACCOUNT-CREATED-AT
+                                    ACCOUNT-UPDATED-AT.
+           MOVE SPACE TO ACCOUNT-FILLER.
+
+           MOVE ACCOUNT-RECORD TO OUTPUT-RECORD.
+           WRITE OUTPUT-RECORD.
+
+           CLOSE OUTPUT-FILE.
+
+           DISPLAY 'SEEDACCT CREATED A000000000000'.
+           STOP RUN.
+

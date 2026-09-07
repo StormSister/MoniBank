@@ -31,7 +31,7 @@
                10 RH-SEP-0         PIC X.
                10 RH-TYPE          PIC X.
                10 RH-SEP-1         PIC X.
-               10 RH-OPERATION     PIC X(7).
+               10 RH-OPERATION     PIC X(8).
                10 RH-SEP-2         PIC X.
                10 RH-REQUEST-ID    PIC X(8).
                10 RH-SEP-3         PIC X.
@@ -40,7 +40,7 @@
                10 RH-STATUS        PIC X.
                10 RH-SEP-5         PIC X.
                10 RH-ERROR-CODE    PIC X(20).
-               10 FILLER           PIC X(101).
+               10 FILLER           PIC X(100).
 /*
 //SYSUT2   DD DSN=HERC01.KICKS.V1R5M0.COBCOPY(MBGWCA),
 //            DISP=SHR

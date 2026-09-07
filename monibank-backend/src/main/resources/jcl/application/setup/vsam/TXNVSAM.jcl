@@ -1,0 +1,34 @@
+//TXNVSAM JOB (TEST),'CREATE TXN VSAM',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//*
+//DEFINE   EXEC PGM=IDCAMS
+//STEPCAT  DD DSN=SYS1.UCAT.TSO,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  DEFINE CLUSTER ( -
+         NAME(MBANK.TXN) -
+         VOLUMES(TSO001) -
+         INDEXED -
+         KEYS(26 1) -
+         RECORDSIZE(119 119) -
+         TRACKS(20 10) -
+         SHAREOPTIONS(2 3) -
+  ) -
+  DATA ( -
+       NAME(MBANK.TXN.D) -
+  ) -
+  INDEX ( -
+        NAME(MBANK.TXN.I) -
+  )
+/*
+//*
+//CHECK    EXEC PGM=IDCAMS,COND=(0,NE,DEFINE)
+//STEPCAT  DD DSN=SYS1.UCAT.TSO,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  LISTCAT ENT(MBANK.TXN) ALL
+/*

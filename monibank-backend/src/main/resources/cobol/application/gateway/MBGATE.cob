@@ -29,19 +29,19 @@
        01  WS-HAVE-RESULT       PIC X.
 
        01  WS-INPUT.
-           05 WS-IN01          PIC X(64).
-           05 WS-IN02          PIC X(64).
-           05 WS-IN03          PIC X(64).
-           05 WS-IN04          PIC X(64).
-           05 WS-IN05          PIC X(64).
-           05 WS-IN06          PIC X(64).
-           05 WS-IN07          PIC X(64).
-           05 WS-IN08          PIC X(64).
+           05 WS-IN01           PIC X(64).
+           05 WS-IN02           PIC X(64).
+           05 WS-IN03           PIC X(64).
+           05 WS-IN04           PIC X(64).
+           05 WS-IN05           PIC X(64).
+           05 WS-IN06           PIC X(64).
+           05 WS-IN07           PIC X(64).
+           05 WS-IN08           PIC X(64).
 
        01  WS-INPUT-BYTES REDEFINES WS-INPUT.
            05 WS-INPUT-CHAR     PIC X OCCURS 512 TIMES.
 
-       01  WS-IDX              PIC S9(4) COMP.
+       01  WS-IDX               PIC S9(4) COMP.
 
        01  WS-CALL-AREA.
            COPY MBGWCA.
@@ -52,9 +52,9 @@
            05 WS-DISPLAY-3      PIC X(32).
 
        01  WS-LINK-MESSAGE.
-           05 FILLER           PIC X(10) VALUE 'LINK RESP='.
+           05 FILLER            PIC X(10) VALUE 'LINK RESP='.
            05 WS-LINK-CODE      PIC +9(5).
-           05 FILLER           PIC X(7) VALUE ' RESP2='.
+           05 FILLER            PIC X(7) VALUE ' RESP2='.
            05 WS-LINK-CODE2     PIC +9(5).
 
        LINKAGE SECTION.
@@ -65,11 +65,14 @@
 
        MAIN-PROCESS.
 
-           MOVE SPACES TO WS-OPERATION WS-TARGET-PROGRAM.
-           MOVE SPACES TO WS-REQUEST-ID.
-           MOVE SPACES TO WS-INPUT-LENGTH.
-           MOVE SPACES TO WS-STATE WS-MESSAGE.
-           MOVE SPACES TO WS-INPUT.
+           MOVE SPACES TO WS-OPERATION
+                          WS-TARGET-PROGRAM
+                          WS-REQUEST-ID
+                          WS-INPUT-LENGTH
+                          WS-STATE
+                          WS-MESSAGE
+                          WS-INPUT.
+
            MOVE 'N' TO WS-HAVE-RESULT.
            MOVE 'Y' TO WS-MARKER.
            MOVE +1 TO WS-MARKER-LENGTH.
@@ -99,7 +102,7 @@
 
            IF WS-RESP NOT = ZERO
                MOVE 'ERROR' TO WS-STATE
-               MOVE 'MAP INPUT NOT RECEIVED. PLEASE TRY AGAIN.'
+               MOVE 'MAP INPUT NOT RECEIVED. TRY AGAIN.'
                    TO WS-MESSAGE
                GO TO SHOW-SCREEN.
 
@@ -112,16 +115,17 @@
            IF INLENL > ZERO
                MOVE INLENI TO WS-INPUT-LENGTH.
 
-           PERFORM COLLECT-INPUT THRU COLLECT-INPUT-EXIT.
+           PERFORM COLLECT-INPUT
+               THRU COLLECT-INPUT-EXIT.
 
-           PERFORM NORMALIZE-INPUT THRU NORMALIZE-INPUT-EXIT
+           PERFORM NORMALIZE-INPUT
+               THRU NORMALIZE-INPUT-EXIT
                VARYING WS-IDX FROM 1 BY 1
                UNTIL WS-IDX > 512.
 
            IF WS-OPERATION = SPACES
                MOVE 'ERROR' TO WS-STATE
-               MOVE 'OPERATION IS REQUIRED.'
-                   TO WS-MESSAGE
+               MOVE 'OPERATION IS REQUIRED.' TO WS-MESSAGE
                GO TO SHOW-SCREEN.
 
            IF REQIDL NOT = 8
@@ -154,16 +158,40 @@
                    TO WS-MESSAGE
                GO TO SHOW-SCREEN.
 
-      * ROUTING ONLY: INPUT LAYOUT BELONGS TO EACH PROGRAM.
+      * ROUTING ONLY. INPUT LAYOUT BELONGS TO EACH PROGRAM.
            IF WS-OPERATION = 'GETCUST'
                MOVE 'GETCUST' TO WS-TARGET-PROGRAM.
 
            IF WS-OPERATION = 'ADDCUST'
                MOVE 'ADDCUSG' TO WS-TARGET-PROGRAM.
 
+           IF WS-OPERATION = 'LISTCUST'
+               MOVE 'LISTCUST' TO WS-TARGET-PROGRAM.
+
+           IF WS-OPERATION = 'CHGCUST'
+               MOVE 'CHGCUST' TO WS-TARGET-PROGRAM.
+
+           IF WS-OPERATION = 'LISTACCT'
+               MOVE 'LISTACCT' TO WS-TARGET-PROGRAM.
+
+           IF WS-OPERATION = 'LISTCARD'
+               MOVE 'LISTCARD' TO WS-TARGET-PROGRAM.
+
+           IF WS-OPERATION = 'ADDACCT'
+               MOVE 'ADDACCT' TO WS-TARGET-PROGRAM.
+
+           IF WS-OPERATION = 'CHGACCT'
+               MOVE 'CHGACCT' TO WS-TARGET-PROGRAM.
+
+           IF WS-OPERATION = 'ADDCARD'
+               MOVE 'ADDCARD' TO WS-TARGET-PROGRAM.
+
+           IF WS-OPERATION = 'CHGCARD'
+               MOVE 'CHGCARD' TO WS-TARGET-PROGRAM.
+
            IF WS-TARGET-PROGRAM = SPACES
                MOVE 'ERROR' TO WS-STATE
-               MOVE 'SUPPORTED OPERATIONS: GETCUST, ADDCUST.'
+               MOVE 'GETCUST ADDCUST LISTCUST CHGCUST LISTACCT LISTCARD'
                    TO WS-MESSAGE
                GO TO SHOW-SCREEN.
 
@@ -176,8 +204,7 @@
            MOVE ZERO TO CA-DATA-COUNT.
            MOVE ZERO TO WS-LINK-RESP WS-LINK-RESP2.
 
-      * A NORMAL RETURN TO THIS SCREEN MUST NOT RETRY A WRITE.
-      * THIS MARKER IS NOT PERSISTENT REQUEST DEDUPLICATION.
+      * NEVER RETRY A WRITE BY RETURNING TO THIS COMMAREA.
            MOVE 'R' TO WS-MARKER.
 
            EXEC CICS LINK
@@ -208,6 +235,8 @@
                IF RH-TYPE NOT = 'E'
                    GO TO BAD-RESPONSE.
 
+      * COMMAREA HOLDS ZERO OR ONE TERMINAL PREVIEW RECORD.
+      * LIST OPERATIONS RETURN COMPLETE DATA THROUGH MBRESULT.
            IF CA-DATA-COUNT NOT = ZERO
                IF CA-DATA-COUNT NOT = 1
                    GO TO BAD-RESPONSE.
@@ -233,8 +262,7 @@
            PERFORM PREPARE-RESULT-VIEW
                THRU PREPARE-RESULT-EXIT.
 
-           MOVE
-               'RESULT VIEW: DATA 1-3, HEADER 4-6. ENTER=NEW REQUEST.'
+           MOVE 'RESULT READY. DATA 1-3 HEADER 4-6. ENTER=NEW.'
                TO WS-MESSAGE.
 
            GO TO SHOW-SCREEN.
@@ -242,14 +270,14 @@
        BAD-RESPONSE.
 
            MOVE 'ERROR' TO WS-STATE.
-           MOVE 'INVALID RESPONSE. DO NOT RETRY ADDCUST. CHECK DATA.'
+           MOVE 'INVALID RESPONSE. DO NOT RETRY WRITES.'
                TO WS-MESSAGE.
            GO TO SHOW-SCREEN.
 
        NEW-REQUEST.
 
            MOVE 'READY' TO WS-STATE.
-           MOVE 'GETCUST=READ. ADDCUST=WRITE. CLEAR TO EXIT.'
+           MOVE 'CUSTOMER OPS; LISTACCT LISTCARD. CLEAR=EXIT.'
                TO WS-MESSAGE.
            GO TO SHOW-SCREEN.
 
@@ -257,22 +285,30 @@
 
            IF IN01L > ZERO
                MOVE IN01I TO WS-IN01.
+
            IF IN02L > ZERO
                MOVE IN02I TO WS-IN02.
+
            IF IN03L > ZERO
                MOVE IN03I TO WS-IN03.
+
            IF IN04L > ZERO
                MOVE IN04I TO WS-IN04.
+
            IF IN05L > ZERO
                MOVE IN05I TO WS-IN05.
+
            IF IN06L > ZERO
                MOVE IN06I TO WS-IN06.
+
            IF IN07L > ZERO
                MOVE IN07I TO WS-IN07.
+
            IF IN08L > ZERO
                MOVE IN08I TO WS-IN08.
 
        COLLECT-INPUT-EXIT.
+
            EXIT.
 
        NORMALIZE-INPUT.
@@ -281,6 +317,7 @@
                MOVE SPACE TO WS-INPUT-CHAR (WS-IDX).
 
        NORMALIZE-INPUT-EXIT.
+
            EXIT.
 
        PREPARE-RESULT-VIEW.
@@ -299,6 +336,7 @@
            MOVE WS-DISPLAY-3 TO WS-IN06.
 
        PREPARE-RESULT-EXIT.
+
            EXIT.
 
        SHOW-SCREEN.

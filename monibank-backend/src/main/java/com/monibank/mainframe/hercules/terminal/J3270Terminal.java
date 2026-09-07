@@ -366,4 +366,27 @@ public final class J3270Terminal extends Emulator {
             super(message);
         }
     }
+
+    public void typeTextAt(
+            int row,
+            int column,
+            String text
+    ) {
+
+        if (text == null || text.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Text cannot be empty."
+            );
+        }
+
+        command("Wait(15,Unlock)");
+        command(
+                "MoveCursor("
+                        + row
+                        + ","
+                        + column
+                        + ")"
+        );
+        command(stringCommand(text));
+    }
 }

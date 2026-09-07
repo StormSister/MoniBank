@@ -1,0 +1,23 @@
+//MBKADD  JOB (TSO),'ADD MBKSRV',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//ADDUSER EXEC PGM=IKJEFT01
+//SYSUADS  DD DISP=SHR,DSN=SYS1.UADS
+//SYSLBC   DD DISP=SHR,DSN=SYS1.BRODCAST
+//SYSTSPRT DD SYSOUT=*
+//SYSTSIN  DD *
+ ACCOUNT
+ ADD (MBKSRV * * ISPLOGON) +
+     NOLIM +
+     NOOPER +
+     NOACCT +
+     JCL +
+     NOMOUNT +
+     UNIT(TSO) +
+     SIZE(8192)
+ LIST (MBKSRV)
+ END
+/*

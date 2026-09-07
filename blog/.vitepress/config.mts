@@ -47,7 +47,19 @@ locales: {
         nav: [
           { text: 'Home', link: '/' },
           { text: 'Project', link: '/#project' },
-          { text: 'Articles', link: '/articles/get-customer' },
+          {
+  text: 'Articles',
+  items: [
+    {
+      text: 'GET CUSTOMER integration',
+      link: '/articles/get-customer'
+    },
+    {
+      text: 'JCL and COBOL automation',
+      link: '/articles/jcl-cobol-automation'
+    }
+  ]
+},
           { text: 'Development', link: '/#development' }
         ],
         outline: { level: [2, 3], label: 'On this page' },
@@ -69,7 +81,19 @@ locales: {
         nav: [
           { text: 'Start', link: '/pl/' },
           { text: 'Projekt', link: '/pl/#projekt' },
-          { text: 'Artykuły', link: '/pl/articles/get-customer' },
+          {
+  text: 'Artykuły',
+  items: [
+    {
+      text: 'Integracja GET CUSTOMER',
+      link: '/pl/articles/get-customer'
+    },
+    {
+      text: 'Automatyzacja JCL i COBOL',
+      link: '/pl/articles/jcl-cobol-automation'
+    }
+  ]
+},
           { text: 'Rozwój', link: '/pl/#rozwoj' }
         ],
         outline: { level: [2, 3], label: 'Na tej stronie' },

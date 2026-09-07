@@ -15,6 +15,9 @@ public final class KicksTerminalSession implements AutoCloseable {
             LoggerFactory.getLogger(KicksTerminalSession.class);
 
     private static final String TERMINAL_MODEL = "3279-2";
+    private static final int MBGW_INPUT_FIELD_LENGTH = 64;
+    private static final int MBGW_INPUT_FIRST_ROW = 7;
+    private static final int MBGW_INPUT_COLUMN = 5;
 
     private final KicksTerminalProperties properties;
     private final ExecutorService executor;
@@ -83,6 +86,38 @@ public final class KicksTerminalSession implements AutoCloseable {
         }
     }
 
+    private void typeMbgwInput(
+            String input
+    ) {
+
+        int fieldNumber = 0;
+
+        for (int offset = 0;
+             offset < input.length();
+             offset += MBGW_INPUT_FIELD_LENGTH) {
+
+            int end =
+                    Math.min(
+                            offset + MBGW_INPUT_FIELD_LENGTH,
+                            input.length()
+                    );
+
+            String chunk =
+                    input.substring(
+                            offset,
+                            end
+                    );
+
+            terminal.typeTextAt(
+                    MBGW_INPUT_FIRST_ROW + fieldNumber,
+                    MBGW_INPUT_COLUMN,
+                    chunk
+            );
+
+            fieldNumber++;
+        }
+    }
+
     public synchronized MbgwTerminalResponse execute(
             MbgwRequest request
     ) throws InterruptedException {
@@ -107,8 +142,7 @@ public final class KicksTerminalSession implements AutoCloseable {
             terminal.command("Tab()");
             terminal.typeKeys(request.formattedInputLength());
 
-            terminal.command("Tab()");
-            terminal.typeKeys(request.input());
+            typeMbgwInput(request.input());
 
             terminal.command("Enter()");
 
@@ -155,6 +189,8 @@ public final class KicksTerminalSession implements AutoCloseable {
             throw exception;
         }
     }
+
+
 
     @Override
     public synchronized void close() throws Exception {

@@ -1,0 +1,12 @@
+//CHKCUST JOB (TEST),'CHECK CUSTOMER VSAM',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//STEP1    EXEC PGM=IDCAMS
+//STEPCAT  DD DSN=SYS1.UCAT.TSO,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  LISTCAT ENT(MBANK.CUST) ALL
+/*

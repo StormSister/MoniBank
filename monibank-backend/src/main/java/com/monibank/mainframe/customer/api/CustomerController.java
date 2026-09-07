@@ -2,6 +2,7 @@ package com.monibank.mainframe.customer.api;
 
 import com.monibank.mainframe.customer.CustomerService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,19 +12,21 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/customers")
 @RequiredArgsConstructor
+@Validated
 public class CustomerController {
 
     private final CustomerService customerService;
 
     @PostMapping
     public ResponseEntity<CustomerResponse> createCustomer(
-            @RequestBody CreateCustomerRequest request
+            @Valid @RequestBody CreateCustomerRequest request
     ) {
 
         return ResponseEntity.ok(
@@ -51,8 +54,10 @@ public class CustomerController {
 
     @PatchMapping("/{customerId}/status")
     public ResponseEntity<CustomerResponse> changeStatus(
-            @PathVariable String customerId,
-            @RequestBody ChangeCustomerStatusRequest request
+            @PathVariable
+            @Pattern(regexp = "C\\d{12}")
+            String customerId,
+            @Valid @RequestBody ChangeCustomerStatusRequest request
     ) {
 
         return ResponseEntity.ok(

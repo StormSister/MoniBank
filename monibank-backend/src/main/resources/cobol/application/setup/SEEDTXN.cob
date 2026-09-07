@@ -1,0 +1,63 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SEEDTXN.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+           SELECT OUTPUT-FILE
+               ASSIGN TO UT-S-OUTPUT.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD  OUTPUT-FILE
+           LABEL RECORDS ARE OMITTED.
+
+       01  OUTPUT-RECORD           PIC X(119).
+
+       WORKING-STORAGE SECTION.
+
+       01  TRANSACTION-RECORD.
+           05 TXN-STATUS           PIC X.
+           05 TXN-PRIMARY-KEY.
+               10 TXN-ACCOUNT-ID   PIC X(13).
+               10 TXN-ID           PIC X(13).
+           05 TXN-DIRECTION        PIC X.
+           05 TXN-TYPE             PIC X(2).
+           05 TXN-CURRENCY         PIC X(3).
+           05 TXN-AMOUNT           PIC S9(13)V99 COMP-3.
+           05 TXN-BALANCE-AFTER    PIC S9(13)V99 COMP-3.
+           05 TXN-DETAIL           PIC X(34).
+           05 TXN-SOURCE-ID        PIC X(13).
+           05 TXN-REQUEST-ID       PIC X(8).
+           05 TXN-CREATED-AT       PIC X(14).
+           05 TXN-FILLER           PIC X.
+
+       PROCEDURE DIVISION.
+
+       MAIN-PROCESS.
+
+           OPEN OUTPUT OUTPUT-FILE.
+
+           MOVE 'C' TO TXN-STATUS.
+           MOVE 'A000000000000' TO TXN-ACCOUNT-ID.
+           MOVE 'T000000000000' TO TXN-ID.
+           MOVE 'C' TO TXN-DIRECTION.
+           MOVE 'OP' TO TXN-TYPE.
+           MOVE 'EUR' TO TXN-CURRENCY.
+           MOVE ZERO TO TXN-AMOUNT
+                        TXN-BALANCE-AFTER.
+           MOVE 'OPENING BALANCE' TO TXN-DETAIL.
+           MOVE SPACES TO TXN-SOURCE-ID.
+           MOVE 'SEED0001' TO TXN-REQUEST-ID.
+           MOVE '20260904000000' TO TXN-CREATED-AT.
+           MOVE SPACE TO TXN-FILLER.
+
+           MOVE TRANSACTION-RECORD TO OUTPUT-RECORD.
+           WRITE OUTPUT-RECORD.
+
+           CLOSE OUTPUT-FILE.
+
+           DISPLAY 'SEEDTXN CREATED T000000000000'.
+           STOP RUN.
