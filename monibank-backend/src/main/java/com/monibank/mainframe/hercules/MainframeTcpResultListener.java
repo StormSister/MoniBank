@@ -22,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Component
@@ -33,7 +35,18 @@ public class MainframeTcpResultListener {
 
     private static final String RESULT_PREFIX = "MBR;";
     private static final String FRAME_PREFIX = "MBP;";
+    private static final String DAILY_REPORT_PREFIX = "MBS;";
     private static final String RESULT_SEPARATOR = ";";
+
+    private static final Pattern JOB_START_PATTERN =
+            Pattern.compile(
+                    "\\bSTART\\s+JOB\\s+\\d+\\s+([A-Z0-9@$#]{1,8})\\b"
+            );
+
+    private static final Pattern JOB_END_PATTERN =
+            Pattern.compile(
+                    "\\bEND\\s+JOB\\s+\\d+\\s+([A-Z0-9@$#]{1,8})\\b"
+            );
 
     private static final int FRAME_PAYLOAD_LENGTH = 80;
     private static final int LOGICAL_RECORD_LENGTH = 160;
@@ -42,6 +55,11 @@ public class MainframeTcpResultListener {
 
     private final Map<String, PendingResult> pendingRequests =
             new ConcurrentHashMap<>();
+
+    private final Map<String, PendingResult> pendingDailyReports =
+            new ConcurrentHashMap<>();
+
+    private volatile String activeDailyReportRequestId;
 
     private volatile boolean running;
     private volatile Socket socket;
@@ -151,6 +169,90 @@ public class MainframeTcpResultListener {
         );
     }
 
+    public void registerDailyReport(String requestId) {
+
+        PendingResult previous =
+                pendingDailyReports.putIfAbsent(
+                        requestId,
+                        new PendingResult()
+                );
+
+        if (previous != null) {
+            throw new IllegalStateException(
+                    "Daily report request already registered: "
+                            + requestId
+            );
+        }
+
+        log.debug(
+                "Registered daily report request {}. Pending={}",
+                requestId,
+                pendingDailyReports.size()
+        );
+    }
+
+    public List<String> awaitDailyReport(
+            String requestId,
+            Duration timeout
+    ) throws TimeoutException {
+
+        PendingResult pending =
+                pendingDailyReports.get(requestId);
+
+        if (pending == null) {
+            throw new IllegalStateException(
+                    "Daily report request is not registered: "
+                            + requestId
+            );
+        }
+
+        try {
+
+            return pending.future()
+                    .get(
+                            timeout.toMillis(),
+                            TimeUnit.MILLISECONDS
+                    );
+
+        } catch (TimeoutException exception) {
+
+            throw exception;
+
+        } catch (InterruptedException exception) {
+
+            Thread.currentThread().interrupt();
+
+            throw new IllegalStateException(
+                    "Interrupted while waiting for daily report: "
+                            + requestId,
+                    exception
+            );
+
+        } catch (Exception exception) {
+
+            throw new IllegalStateException(
+                    "Failed while waiting for daily report: "
+                            + requestId,
+                    exception
+            );
+        }
+    }
+
+    public void unregisterDailyReport(String requestId) {
+
+        pendingDailyReports.remove(requestId);
+
+        if (requestId.equals(activeDailyReportRequestId)) {
+            activeDailyReportRequestId = null;
+        }
+
+        log.debug(
+                "Unregistered daily report request {}. Pending={}",
+                requestId,
+                pendingDailyReports.size()
+        );
+    }
+
     private void listenLoop() {
 
         while (running) {
@@ -229,12 +331,19 @@ public class MainframeTcpResultListener {
         }
     }
 
-    private void handleLine(String rawLine) {
+    void handleLine(String rawLine) {
 
         String line =
                 normalize(rawLine);
 
         if (line.isBlank()) {
+            return;
+        }
+
+        updateDailyReportJobContext(line);
+
+        if (line.startsWith(DAILY_REPORT_PREFIX)) {
+            handleDailyReportRecord(line);
             return;
         }
 
@@ -248,6 +357,91 @@ public class MainframeTcpResultListener {
 
         if (line.startsWith(RESULT_PREFIX)) {
             handleResultRecord(line);
+        }
+    }
+
+    private void updateDailyReportJobContext(String line) {
+
+        Matcher startMatcher =
+                JOB_START_PATTERN.matcher(line);
+
+        if (startMatcher.find()) {
+
+            String jobName =
+                    startMatcher.group(1);
+
+            activeDailyReportRequestId =
+                    pendingDailyReports.containsKey(jobName)
+                            ? jobName
+                            : null;
+
+            if (activeDailyReportRequestId != null) {
+                log.info(
+                        "DAILY REPORT [{}] printer output started",
+                        activeDailyReportRequestId
+                );
+            }
+
+            return;
+        }
+
+        Matcher endMatcher =
+                JOB_END_PATTERN.matcher(line);
+
+        if (!endMatcher.find()) {
+            return;
+        }
+
+        String jobName =
+                endMatcher.group(1);
+
+        if (jobName.equals(activeDailyReportRequestId)) {
+            activeDailyReportRequestId = null;
+        }
+    }
+
+    private void handleDailyReportRecord(String line) {
+
+        String requestId =
+                activeDailyReportRequestId;
+
+        if (requestId == null) {
+            log.debug(
+                    "Ignoring MBS record outside a registered report job"
+            );
+            return;
+        }
+
+        PendingResult pending =
+                pendingDailyReports.get(requestId);
+
+        if (pending == null) {
+            log.warn(
+                    "Received daily report for expired request {}",
+                    requestId
+            );
+            return;
+        }
+
+        log.info(
+                "DAILY REPORT [{}] << [{}]",
+                requestId,
+                line
+        );
+
+        pending.add(line);
+
+        String[] parts =
+                line.split(
+                        RESULT_SEPARATOR,
+                        3
+                );
+
+        if (parts.length >= 2
+                && "E".equals(parts[1].trim())) {
+
+            pending.complete();
+            activeDailyReportRequestId = null;
         }
     }
 
@@ -520,6 +714,19 @@ public class MainframeTcpResultListener {
         );
 
         pendingRequests.clear();
+
+        pendingDailyReports.forEach(
+                (requestId, pending) ->
+                        pending.future()
+                                .completeExceptionally(
+                                        new IllegalStateException(
+                                                "Application shutting down"
+                                        )
+                                )
+        );
+
+        pendingDailyReports.clear();
+        activeDailyReportRequestId = null;
     }
 
     private static final class PendingResult {
