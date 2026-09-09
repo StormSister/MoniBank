@@ -1,0 +1,34 @@
+//DAYRVSAM JOB (TEST),'CREATE DAILY VSAM',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//*
+//DEFINE   EXEC PGM=IDCAMS
+//STEPCAT  DD DSN=SYS1.UCAT.TSO,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  DEFINE CLUSTER ( -
+         NAME(MBANK.DAYRPT) -
+         VOLUMES(TSO001) -
+         INDEXED -
+         KEYS(11 1) -
+         RECORDSIZE(119 119) -
+         TRACKS(2 1) -
+         SHAREOPTIONS(2 3) -
+  ) -
+  DATA ( -
+       NAME(MBANK.DAYRPT.D) -
+  ) -
+  INDEX ( -
+        NAME(MBANK.DAYRPT.I) -
+  )
+/*
+//*
+//CHECK    EXEC PGM=IDCAMS,COND=(0,NE,DEFINE)
+//STEPCAT  DD DSN=SYS1.UCAT.TSO,DISP=SHR
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD *
+  LISTCAT ENT(MBANK.DAYRPT) ALL
+/*

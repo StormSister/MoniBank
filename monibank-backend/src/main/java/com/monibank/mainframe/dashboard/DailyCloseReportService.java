@@ -1,7 +1,6 @@
 package com.monibank.mainframe.dashboard;
 
 import com.monibank.mainframe.dashboard.api.DailyCloseReportResponse;
-import com.monibank.mainframe.dashboard.mainframe.DailyCloseReportExecutor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +15,7 @@ public class DailyCloseReportService {
 
     private static final int MAX_CACHED_REPORTS = 8;
 
-    private final DailyCloseReportExecutor dailyCloseReportExecutor;
+    private final DailyStatisticsService dailyStatisticsService;
 
     private final Map<ReportKey, DailyCloseReportResponse> cache =
             new LinkedHashMap<>(16, 0.75f, true);
@@ -49,7 +48,7 @@ public class DailyCloseReportService {
         }
 
         DailyCloseReportResponse loaded =
-                dailyCloseReportExecutor.execute(
+                dailyStatisticsService.load(
                         businessDate,
                         normalizedCurrency
                 );

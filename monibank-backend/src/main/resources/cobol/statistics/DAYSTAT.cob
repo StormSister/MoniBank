@@ -17,6 +17,8 @@
        01  WS-PROCESS-FAILED       PIC X.
        01  WS-SPOOL-FAILED         PIC X.
        01  WS-BROWSE-TYPE          PIC X.
+       01  WS-REPORT-LENGTH        PIC S9(4) COMP.
+       01  WS-REPORT-KEY-LENGTH    PIC S9(4) COMP.
 
        01  WS-LINK-RESP            PIC S9(8) COMP.
        01  WS-LINK-RESP2           PIC S9(8) COMP.
@@ -53,6 +55,31 @@
            05 WS-DEPOSIT-AMOUNT     PIC S9(13)V99 VALUE ZERO.
            05 WS-WITHDRAWAL-AMOUNT  PIC S9(13)V99 VALUE ZERO.
            05 WS-INTEREST-AMOUNT    PIC S9(13)V99 VALUE ZERO.
+
+      * PHYSICAL MBANK.DAYRPT RECORD - EXACTLY 119 BYTES.
+      * PRIMARY KEY IS BUSINESS DATE + CURRENCY AT OFFSET 1.
+       01  DAILY-REPORT-RECORD.
+           05 RPT-STATE             PIC X.
+           05 RPT-KEY.
+              10 RPT-BUSINESS-DATE  PIC X(8).
+              10 RPT-CURRENCY       PIC X(3).
+           05 RPT-OPERATION-COUNT   PIC 9(9) COMP-3.
+           05 RPT-DEPOSIT-COUNT     PIC 9(9) COMP-3.
+           05 RPT-WITHDRAWAL-COUNT  PIC 9(9) COMP-3.
+           05 RPT-INTEREST-COUNT    PIC 9(9) COMP-3.
+           05 RPT-CUSTOMER-COUNT    PIC 9(9) COMP-3.
+           05 RPT-ACTIVE-COUNT      PIC 9(9) COMP-3.
+           05 RPT-INACTIVE-COUNT    PIC 9(9) COMP-3.
+           05 RPT-NEW-COUNT         PIC 9(9) COMP-3.
+           05 RPT-DEPOSIT-AMOUNT    PIC S9(13)V99 COMP-3.
+           05 RPT-WITHDRAWAL-AMOUNT PIC S9(13)V99 COMP-3.
+           05 RPT-INTEREST-AMOUNT   PIC S9(13)V99 COMP-3.
+           05 RPT-REQUEST-ID        PIC X(8).
+           05 RPT-CLOSED-AT.
+              10 RPT-CLOSED-DATE    PIC X(8).
+              10 RPT-CLOSED-TIME    PIC X(6).
+           05 RPT-RESULT-CODE       PIC X(12).
+           05 FILLER                PIC X(9).
 
       * PHYSICAL MBANK.TXN RECORD - EXACTLY 119 BYTES.
        01  TRANSACTION-RECORD.
@@ -136,6 +163,7 @@
                           CUSTOMER-RECORD
                           TRANSACTION-OUTPUT
                           CUSTOMER-OUTPUT
+                          DAILY-REPORT-RECORD
                           CA-DATA-RECORD
                           CA-HEADER-RECORD.
            MOVE LOW-VALUES TO WS-TXN-BROWSE-KEY
@@ -158,6 +186,8 @@
                         WS-ENDBR-RESP2
                         WS-LINK-RESP
                         WS-LINK-RESP2.
+           MOVE 119 TO WS-REPORT-LENGTH.
+           MOVE 11 TO WS-REPORT-KEY-LENGTH.
 
            MOVE SPACES TO MBR-CALL-CONTROL
                           MBR-CALL-TOKEN
@@ -235,6 +265,16 @@
            IF WS-PROCESS-FAILED = 'Y'
                GO TO FINISH-PROGRAM.
 
+           MOVE 'S' TO RH-TYPE.
+           MOVE 'C' TO RH-STATUS.
+           MOVE 'OK' TO RH-ERROR-CODE.
+
+           PERFORM STORE-DAILY-REPORT
+               THRU STORE-DAILY-REPORT-EXIT.
+
+           IF WS-PROCESS-FAILED = 'Y'
+               GO TO FINISH-PROGRAM.
+
            PERFORM WRITE-TRANSACTION-SUMMARY
                THRU WRITE-TRANSACTION-SUMMARY-EXIT.
 
@@ -246,10 +286,6 @@
 
            IF WS-SPOOL-FAILED = 'Y'
                GO TO RETURN-PROGRAM.
-
-           MOVE 'S' TO RH-TYPE.
-           MOVE 'C' TO RH-STATUS.
-           MOVE 'OK' TO RH-ERROR-CODE.
 
        FINISH-PROGRAM.
 
@@ -489,6 +525,104 @@
                MOVE 'Y' TO WS-PROCESS-FAILED.
 
        END-CURRENT-BROWSE-EXIT.
+
+           EXIT.
+
+       STORE-DAILY-REPORT.
+
+           PERFORM PREPARE-DAILY-REPORT
+               THRU PREPARE-DAILY-REPORT-EXIT.
+           MOVE ZERO TO WS-RESP WS-RESP2.
+
+      * WRITE CREATES THE FIRST CLOSE FOR A DATE/CURRENCY KEY.
+           EXEC CICS WRITE
+               FILE('DAYRPT')
+               FROM(DAILY-REPORT-RECORD)
+               RIDFLD(RPT-KEY)
+               KEYLENGTH(WS-REPORT-KEY-LENGTH)
+               LENGTH(WS-REPORT-LENGTH)
+               RESP(WS-RESP)
+               RESP2(WS-RESP2)
+           END-EXEC.
+
+           IF WS-RESP = ZERO
+               GO TO STORE-DAILY-REPORT-EXIT.
+
+      * A RERUN REPLACES THE EXISTING REPORT, BUT DOES NOT CREATE
+      * ANOTHER INTEREST TRANSACTION (POSTINT IS IDEMPOTENT).
+           IF WS-RESP = DFHRESP(DUPREC)
+               PERFORM REPLACE-DAILY-REPORT
+                   THRU REPLACE-DAILY-REPORT-EXIT.
+
+           IF WS-RESP NOT = ZERO
+               MOVE 'RPWR' TO WS-DIAG-STAGE
+               PERFORM SET-CICS-DIAGNOSTIC
+                   THRU SET-CICS-DIAGNOSTIC-EXIT
+               MOVE 'E' TO RH-TYPE
+               MOVE SPACES TO RH-STATUS
+               MOVE 'Y' TO WS-PROCESS-FAILED.
+
+       STORE-DAILY-REPORT-EXIT.
+
+           EXIT.
+
+       REPLACE-DAILY-REPORT.
+
+           MOVE ZERO TO WS-RESP WS-RESP2.
+
+           EXEC CICS READ
+               FILE('DAYRPT')
+               INTO(DAILY-REPORT-RECORD)
+               RIDFLD(RPT-KEY)
+               KEYLENGTH(WS-REPORT-KEY-LENGTH)
+               LENGTH(WS-REPORT-LENGTH)
+               UPDATE
+               RESP(WS-RESP)
+               RESP2(WS-RESP2)
+           END-EXEC.
+
+           IF WS-RESP NOT = ZERO
+               GO TO REPLACE-DAILY-REPORT-EXIT.
+
+           PERFORM PREPARE-DAILY-REPORT
+               THRU PREPARE-DAILY-REPORT-EXIT.
+           MOVE ZERO TO WS-RESP WS-RESP2.
+
+           EXEC CICS REWRITE
+               FILE('DAYRPT')
+               FROM(DAILY-REPORT-RECORD)
+               LENGTH(WS-REPORT-LENGTH)
+               RESP(WS-RESP)
+               RESP2(WS-RESP2)
+           END-EXEC.
+
+       REPLACE-DAILY-REPORT-EXIT.
+
+           EXIT.
+
+       PREPARE-DAILY-REPORT.
+
+           MOVE SPACES TO DAILY-REPORT-RECORD.
+           MOVE 'C' TO RPT-STATE.
+           MOVE REQUEST-BUSINESS-DATE TO RPT-BUSINESS-DATE.
+           MOVE REQUEST-CURRENCY TO RPT-CURRENCY.
+           MOVE WS-TXN-COUNT TO RPT-OPERATION-COUNT.
+           MOVE WS-DEPOSIT-COUNT TO RPT-DEPOSIT-COUNT.
+           MOVE WS-WITHDRAWAL-COUNT TO RPT-WITHDRAWAL-COUNT.
+           MOVE WS-INTEREST-COUNT TO RPT-INTEREST-COUNT.
+           MOVE WS-CUSTOMER-COUNT TO RPT-CUSTOMER-COUNT.
+           MOVE WS-ACTIVE-COUNT TO RPT-ACTIVE-COUNT.
+           MOVE WS-INACTIVE-COUNT TO RPT-INACTIVE-COUNT.
+           MOVE WS-NEW-CUSTOMER-COUNT TO RPT-NEW-COUNT.
+           MOVE WS-DEPOSIT-AMOUNT TO RPT-DEPOSIT-AMOUNT.
+           MOVE WS-WITHDRAWAL-AMOUNT TO RPT-WITHDRAWAL-AMOUNT.
+           MOVE WS-INTEREST-AMOUNT TO RPT-INTEREST-AMOUNT.
+           MOVE CA-REQUEST-ID TO RPT-REQUEST-ID.
+           MOVE REQUEST-BUSINESS-DATE TO RPT-CLOSED-DATE.
+           MOVE '235959' TO RPT-CLOSED-TIME.
+           MOVE 'OK' TO RPT-RESULT-CODE.
+
+       PREPARE-DAILY-REPORT-EXIT.
 
            EXIT.
 

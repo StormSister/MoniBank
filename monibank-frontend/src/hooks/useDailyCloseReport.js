@@ -7,8 +7,8 @@ function previousDay() {
   return date.toISOString().slice(0, 10)
 }
 
-export function useDailyCloseReport(currency = 'EUR') {
-  const businessDate = import.meta.env.VITE_DAILY_CLOSE_DATE || previousDay()
+export function useDailyCloseReport(currency = 'EUR', date, options = {}) {
+  const businessDate = date || import.meta.env.VITE_DAILY_CLOSE_DATE || previousDay()
 
   return useQuery({
     queryKey: ['daily-close', businessDate, currency],
@@ -17,5 +17,6 @@ export function useDailyCloseReport(currency = 'EUR') {
         `/api/dashboard/daily-close?date=${businessDate}&currency=${currency}`,
         { signal },
       ),
+    ...options,
   })
 }

@@ -42,7 +42,7 @@ public class DailyCloseScheduler {
 
         try {
             /*
-             * First try to restore yesterday's already-created PDS member.
+             * First restore yesterday's report from MBANK.DAYRPT.
              * A backend restart must not repeat the close merely because the
              * in-memory cache is empty.
              */
@@ -51,8 +51,14 @@ public class DailyCloseScheduler {
                     "DAILY CLOSE startup restored report for {}",
                     date
             );
-        } catch (DailyCloseReportUnavailableException exception) {
+        } catch (DailyCloseReportNotFoundException exception) {
             runSafely(date, "startup catch-up");
+        } catch (DailyCloseReportUnavailableException exception) {
+            log.error(
+                    "DAILY CLOSE startup could not read report for {}",
+                    date,
+                    exception
+            );
         }
     }
 

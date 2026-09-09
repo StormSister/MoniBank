@@ -22,20 +22,20 @@ public class DailyStatisticsResultParser {
     public DailyCloseReportResponse parse(MainframeResult result) {
         if (result == null) {
             throw new IllegalArgumentException(
-                    "DAYSTAT result cannot be null."
+                    "Daily statistics result cannot be null."
             );
         }
 
         if (!"OK".equals(result.header().code())) {
             throw new IllegalStateException(
-                    "DAYSTAT ended with code: "
+                    "Daily statistics operation ended with code: "
                             + result.header().code()
             );
         }
 
         if (!"C".equals(result.header().status())) {
             throw new IllegalStateException(
-                    "DAYSTAT returned unexpected status: "
+                    "Daily statistics operation returned status: "
                             + result.header().status()
             );
         }
@@ -61,7 +61,8 @@ public class DailyStatisticsResultParser {
         String requestId = result.header().entityId();
         if (requestId == null || !requestId.matches("R\\d{7}")) {
             throw new IllegalStateException(
-                    "DAYSTAT returned invalid request ID: " + requestId
+                    "Daily statistics returned invalid request ID: "
+                            + requestId
             );
         }
 
@@ -100,7 +101,7 @@ public class DailyStatisticsResultParser {
 
         if (matching.size() != 1) {
             throw new IllegalStateException(
-                    "DAYSTAT returned " + matching.size() + " "
+                    "Daily statistics returned " + matching.size() + " "
                             + entityType + " records; expected 1."
             );
         }
@@ -112,7 +113,7 @@ public class DailyStatisticsResultParser {
         String payload = record.payload();
         if (payload == null || payload.length() != PAYLOAD_LENGTH) {
             throw new IllegalStateException(
-                    "DAYSTAT " + record.entityType()
+                    "Daily statistics " + record.entityType()
                             + " payload must contain 119 characters."
             );
         }
@@ -127,7 +128,7 @@ public class DailyStatisticsResultParser {
         String value = field(payload, start, end);
         if (!value.matches("\\d+")) {
             throw new IllegalStateException(
-                    "Invalid DAYSTAT count: " + value
+                    "Invalid daily statistics count: " + value
             );
         }
         return Long.parseLong(value);
@@ -139,7 +140,7 @@ public class DailyStatisticsResultParser {
             return new BigDecimal(value);
         } catch (NumberFormatException exception) {
             throw new IllegalStateException(
-                    "Invalid DAYSTAT amount: " + value,
+                    "Invalid daily statistics amount: " + value,
                     exception
             );
         }
@@ -150,7 +151,7 @@ public class DailyStatisticsResultParser {
             return LocalDate.parse(value, DATE_FORMAT);
         } catch (RuntimeException exception) {
             throw new IllegalStateException(
-                    "Invalid DAYSTAT date: " + value,
+                    "Invalid daily statistics date: " + value,
                     exception
             );
         }
@@ -163,7 +164,7 @@ public class DailyStatisticsResultParser {
     ) {
         if (!expected.equals(actual)) {
             throw new IllegalStateException(
-                    "Unexpected DAYSTAT " + description + ": "
+                    "Unexpected daily statistics " + description + ": "
                             + actual + ", expected " + expected + "."
             );
         }

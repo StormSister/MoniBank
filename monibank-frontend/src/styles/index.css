@@ -114,6 +114,19 @@ button { cursor: pointer; }
   isolation: isolate;
 }
 
+/* Reserve room for the fixed console only when both surfaces can remain useful. */
+@media (min-width: 1680px) {
+  .app-workspace.console-open {
+    margin-right: 760px;
+  }
+}
+
+@media (max-width: 639px) {
+  .live-console {
+    border-left: 0;
+  }
+}
+
 .donut { background: conic-gradient(#55e36a 0 68%, #d7a23b 68% 80%, #60a5fa 80% 92%, #ff5b57 92% 100%); }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,75 @@
+       IDENTIFICATION DIVISION.
+       PROGRAM-ID. SEEDRPT.
+
+       ENVIRONMENT DIVISION.
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+
+           SELECT OUTPUT-FILE
+               ASSIGN TO UT-S-OUTPUT.
+
+       DATA DIVISION.
+       FILE SECTION.
+
+       FD  OUTPUT-FILE
+           LABEL RECORDS ARE OMITTED.
+
+       01  OUTPUT-RECORD           PIC X(119).
+
+       WORKING-STORAGE SECTION.
+
+      * TECHNICAL RECORD USED ONLY TO INITIALIZE THE EMPTY KSDS.
+      * DATE 00000000 CANNOT BE REQUESTED THROUGH THE JAVA API.
+       01  DAILY-REPORT-RECORD.
+           05 RPT-STATE             PIC X.
+           05 RPT-KEY.
+              10 RPT-BUSINESS-DATE  PIC X(8).
+              10 RPT-CURRENCY       PIC X(3).
+           05 RPT-OPERATION-COUNT   PIC 9(9) COMP-3.
+           05 RPT-DEPOSIT-COUNT     PIC 9(9) COMP-3.
+           05 RPT-WITHDRAWAL-COUNT  PIC 9(9) COMP-3.
+           05 RPT-INTEREST-COUNT    PIC 9(9) COMP-3.
+           05 RPT-CUSTOMER-COUNT    PIC 9(9) COMP-3.
+           05 RPT-ACTIVE-COUNT      PIC 9(9) COMP-3.
+           05 RPT-INACTIVE-COUNT    PIC 9(9) COMP-3.
+           05 RPT-NEW-COUNT         PIC 9(9) COMP-3.
+           05 RPT-DEPOSIT-AMOUNT    PIC S9(13)V99 COMP-3.
+           05 RPT-WITHDRAWAL-AMOUNT PIC S9(13)V99 COMP-3.
+           05 RPT-INTEREST-AMOUNT   PIC S9(13)V99 COMP-3.
+           05 RPT-REQUEST-ID        PIC X(8).
+           05 RPT-CLOSED-AT         PIC X(14).
+           05 RPT-RESULT-CODE       PIC X(12).
+           05 RPT-FILLER            PIC X(9).
+
+       PROCEDURE DIVISION.
+
+       MAIN-PROCESS.
+
+           OPEN OUTPUT OUTPUT-FILE.
+
+           MOVE SPACES TO DAILY-REPORT-RECORD.
+           MOVE 'I' TO RPT-STATE.
+           MOVE '00000000' TO RPT-BUSINESS-DATE.
+           MOVE 'ZZZ' TO RPT-CURRENCY.
+           MOVE ZERO TO RPT-OPERATION-COUNT
+                        RPT-DEPOSIT-COUNT
+                        RPT-WITHDRAWAL-COUNT
+                        RPT-INTEREST-COUNT
+                        RPT-CUSTOMER-COUNT
+                        RPT-ACTIVE-COUNT
+                        RPT-INACTIVE-COUNT
+                        RPT-NEW-COUNT
+                        RPT-DEPOSIT-AMOUNT
+                        RPT-WITHDRAWAL-AMOUNT
+                        RPT-INTEREST-AMOUNT.
+           MOVE 'SEED0001' TO RPT-REQUEST-ID.
+           MOVE '00000000000000' TO RPT-CLOSED-AT.
+           MOVE 'INIT' TO RPT-RESULT-CODE.
+
+           MOVE DAILY-REPORT-RECORD TO OUTPUT-RECORD.
+           WRITE OUTPUT-RECORD.
+
+           CLOSE OUTPUT-FILE.
+
+           DISPLAY 'SEEDRPT INITIALIZED MBANK.DAYRPT'.
+           STOP RUN.

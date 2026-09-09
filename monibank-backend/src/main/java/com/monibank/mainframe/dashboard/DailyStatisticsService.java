@@ -16,7 +16,8 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class DailyStatisticsService {
 
-    private static final String OPERATION = "DAYSTAT";
+    private static final String CALCULATE_OPERATION = "DAYSTAT";
+    private static final String LOAD_OPERATION = "GETSTAT";
 
     private final DailyStatisticsRecordMapper recordMapper;
     private final DailyStatisticsResultParser resultParser;
@@ -26,10 +27,52 @@ public class DailyStatisticsService {
             LocalDate businessDate,
             String currency
     ) {
+        return execute(
+                CALCULATE_OPERATION,
+                businessDate,
+                currency
+        );
+    }
+
+    public DailyCloseReportResponse load(
+            LocalDate businessDate,
+            String currency
+    ) {
+        try {
+            return execute(
+                    LOAD_OPERATION,
+                    businessDate,
+                    currency
+            );
+        } catch (IllegalStateException exception) {
+            if (isReportNotFound(exception)) {
+                throw new DailyCloseReportNotFoundException(
+                        businessDate,
+                        currency,
+                        exception
+                );
+            }
+
+            throw new DailyCloseReportUnavailableException(
+                    "Could not load closed-day report "
+                            + businessDate
+                            + " "
+                            + currency
+                            + " from MVS.",
+                    exception
+            );
+        }
+    }
+
+    private DailyCloseReportResponse execute(
+            String operation,
+            LocalDate businessDate,
+            String currency
+    ) {
         String input = recordMapper.toRecord(businessDate, currency);
 
         MainframeResult result = operationExecutor.execute(
-                OPERATION,
+                operation,
                 input
         );
 
@@ -37,20 +80,21 @@ public class DailyStatisticsService {
 
         if (!businessDate.equals(report.businessDate())) {
             throw new DailyCloseFailedException(
-                    "DAYSTAT returned date " + report.businessDate()
+                    operation + " returned date " + report.businessDate()
                             + " instead of " + businessDate + "."
             );
         }
 
         if (!currency.equals(report.currency())) {
             throw new DailyCloseFailedException(
-                    "DAYSTAT returned currency " + report.currency()
+                    operation + " returned currency " + report.currency()
                             + " instead of " + currency + "."
             );
         }
 
         log.info(
-                "DAYSTAT [{}] calculated {} operation(s) for {} {}",
+                "{} [{}] returned {} operation(s) for {} {}",
+                operation,
                 report.requestId(),
                 report.transactions().operationCount(),
                 businessDate,
@@ -58,5 +102,19 @@ public class DailyStatisticsService {
         );
 
         return report;
+    }
+
+    private boolean isReportNotFound(Throwable exception) {
+        Throwable current = exception;
+
+        while (current != null) {
+            if (current.getMessage() != null
+                    && current.getMessage().contains("RPTNOTF")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+
+        return false;
     }
 }

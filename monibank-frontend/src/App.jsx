@@ -6,6 +6,7 @@ import AccountsPage from './pages/AccountsPage.jsx'
 import CardsPage from './pages/CardsPage.jsx'
 import CashDeskPage from './pages/CashDeskPage.jsx'
 import StatementsPage from './pages/StatementsPage.jsx'
+import ReportsPage from './pages/ReportsPage.jsx'
 import PlaceholderPage from './pages/PlaceholderPage.jsx'
 
 export default function App() {
@@ -21,7 +22,7 @@ export default function App() {
         <Route path="statements" element={<StatementsPage />} />
         <Route path="jobs" element={<PlaceholderPage title="Jobs" />} />
         <Route path="audit-log" element={<PlaceholderPage title="Audit Log" />} />
-        <Route path="reports" element={<PlaceholderPage title="Reports" />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<PlaceholderPage title="Settings" />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
