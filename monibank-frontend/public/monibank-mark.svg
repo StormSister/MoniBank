@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">MoniBank</title>
+  <path fill="none" stroke="#d7a23b" stroke-linecap="square" stroke-linejoin="miter" stroke-width="5"
+    d="M8 52V10l24 24 24-24v42M16 52V24l16 16 16-16v28"/>
+  <path fill="none" stroke="#55e36a" stroke-linecap="square" stroke-width="4"
+    d="M24 48h5m4 0h7"/>
+</svg>

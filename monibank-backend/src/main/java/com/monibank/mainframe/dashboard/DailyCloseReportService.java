@@ -60,6 +60,36 @@ public class DailyCloseReportService {
         return loaded;
     }
 
+    public synchronized void cacheReport(
+            DailyCloseReportResponse report
+    ) {
+        if (report == null) {
+            throw new IllegalArgumentException(
+                    "Daily close report is required."
+            );
+        }
+
+        ReportKey key = new ReportKey(
+                report.businessDate(),
+                normalizeCurrency(report.currency())
+        );
+
+        cache.put(key, report);
+        evictOldestEntryIfNeeded();
+    }
+
+    public synchronized boolean isCached(
+            LocalDate businessDate,
+            String currency
+    ) {
+        return cache.containsKey(
+                new ReportKey(
+                        businessDate,
+                        normalizeCurrency(currency)
+                )
+        );
+    }
+
     private String normalizeCurrency(String currency) {
 
         if (currency == null

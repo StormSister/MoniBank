@@ -331,7 +331,7 @@ public class MainframeTcpResultListener {
         }
     }
 
-    void handleLine(String rawLine) {
+    public void handleLine(String rawLine) {
 
         String line =
                 normalize(rawLine);

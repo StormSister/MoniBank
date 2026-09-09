@@ -54,6 +54,16 @@ public class TransactionService {
         return parseTransactions(result);
     }
 
+    public List<TransactionResponse> getRecentTransactions(
+            int limit
+    ) {
+
+        return getTransactions()
+                .stream()
+                .limit(limit)
+                .toList();
+    }
+
     public List<TransactionResponse> getTransactions(
             String accountId
     ) {

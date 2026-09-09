@@ -17,7 +17,9 @@ public record MainframeProperties(
         String jobPassword,
 
         String resultHost,
-        String resultSpoolPath
+        String resultSpoolPath,
+        String liveLogContainer,
+        String liveLogPath
 
 ) {
 }
