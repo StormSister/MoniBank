@@ -1,5 +1,5 @@
 import FormField, { Input } from '../ui/FormField.jsx'
-import { todayIso } from '../../features/customers/customerForm.js'
+import { todayIso } from '../../features/customers/CustomerForm.js'
 
 export default function CustomerFormFields({ form, errors, onChange, idPrefix = 'customer' }) {
   const field = (name) => `${idPrefix}-${name}`

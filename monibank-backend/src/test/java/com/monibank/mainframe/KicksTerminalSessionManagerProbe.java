@@ -1,7 +1,9 @@
 package com.monibank.mainframe;
 
 import com.monibank.mainframe.config.KicksTerminalProperties;
+import com.monibank.mainframe.config.KicksTerminalDefinition;
 import com.monibank.mainframe.hercules.terminal.KicksTerminalSessionManager;
+import com.monibank.mainframe.hercules.terminal.DefaultKicksTerminalSessionFactory;
 import com.monibank.mainframe.hercules.terminal.MbgwRequest;
 import com.monibank.mainframe.hercules.terminal.MbgwTerminalResponse;
 import com.monibank.mainframe.hercules.terminal.MbgwTerminalStatus;
@@ -10,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +29,10 @@ class KicksTerminalSessionManagerProbe {
                 createProperties();
 
         KicksTerminalSessionManager manager =
-                new KicksTerminalSessionManager(properties);
+                new KicksTerminalSessionManager(
+                        properties,
+                        new DefaultKicksTerminalSessionFactory()
+                );
 
         try {
             manager.start();
@@ -120,10 +126,17 @@ class KicksTerminalSessionManagerProbe {
                 true,
                 "127.0.0.1",
                 13271,
-                13270,
-                username,
-                password,
-                kicksCommand
+                Duration.ofSeconds(2),
+                1,
+                List.of(
+                        new KicksTerminalDefinition(
+                                "TERM-1",
+                                13270,
+                                username,
+                                password,
+                                kicksCommand
+                        )
+                )
         );
     }
 

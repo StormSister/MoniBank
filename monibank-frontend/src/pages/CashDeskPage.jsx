@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowDownToLine, ArrowUpFromLine, CheckCircle2, Landmark, RefreshCw, Search } from 'lucide-react'
 import Button from '../components/ui/Button.jsx'
 import FormField, { Input, Select } from '../components/ui/FormField.jsx'
@@ -10,11 +11,16 @@ import { useDeposit, useWithdrawal } from '../hooks/useTransactions.js'
 const INITIAL_FORM = Object.freeze({ accountId: '', amount: '', detail: 'CASH DESK DEPOSIT', sourceId: 'CASHDESK00001' })
 
 export default function CashDeskPage() {
+  const [searchParams] = useSearchParams()
+  const requestedOperation = searchParams.get('operation') === 'withdrawal' ? 'withdrawal' : 'deposit'
   const accountsQuery = useAccounts()
   const deposit = useDeposit()
   const withdrawal = useWithdrawal()
-  const [operation, setOperation] = useState('deposit')
-  const [form, setForm] = useState({ ...INITIAL_FORM })
+  const [operation, setOperation] = useState(requestedOperation)
+  const [form, setForm] = useState({
+    ...INITIAL_FORM,
+    detail: requestedOperation === 'withdrawal' ? 'CASH DESK WITHDRAWAL' : 'CASH DESK DEPOSIT',
+  })
   const [errors, setErrors] = useState({})
   const [result, setResult] = useState(null)
   const [accountSearch, setAccountSearch] = useState('')

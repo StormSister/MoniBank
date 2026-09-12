@@ -1,5 +1,6 @@
 package com.monibank.mainframe.hercules.terminal;
 
+import com.monibank.mainframe.config.KicksTerminalDefinition;
 import com.monibank.mainframe.config.KicksTerminalProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,8 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public final class KicksTerminalSession implements AutoCloseable {
+public final class KicksTerminalSession
+        implements KicksTerminalConnection {
 
     private static final Logger log =
             LoggerFactory.getLogger(KicksTerminalSession.class);
@@ -20,6 +22,7 @@ public final class KicksTerminalSession implements AutoCloseable {
     private static final int MBGW_INPUT_COLUMN = 5;
 
     private final KicksTerminalProperties properties;
+    private final KicksTerminalDefinition definition;
     private final ExecutorService executor;
 
     private J3270Terminal terminal;
@@ -27,11 +30,16 @@ public final class KicksTerminalSession implements AutoCloseable {
             TerminalSessionState.DISCONNECTED;
 
     public KicksTerminalSession(
-            KicksTerminalProperties properties
+            KicksTerminalProperties properties,
+            KicksTerminalDefinition definition
     ) {
         this.properties = Objects.requireNonNull(
                 properties,
                 "properties cannot be null."
+        );
+        this.definition = Objects.requireNonNull(
+                definition,
+                "definition cannot be null."
         );
         this.executor = Executors.newSingleThreadExecutor();
     }
@@ -45,12 +53,12 @@ public final class KicksTerminalSession implements AutoCloseable {
         validateConfiguration();
 
         terminal = new J3270Terminal(
-                properties.emulatorControlPort(),
+                definition.emulatorControlPort(),
                 executor
         );
         terminal.setVisible(false);
         terminal.setModel(TERMINAL_MODEL);
-        terminal.protectSecret(properties.password());
+        terminal.protectSecret(definition.password());
 
         try {
             state = TerminalSessionState.CONNECTING;
@@ -190,6 +198,32 @@ public final class KicksTerminalSession implements AutoCloseable {
         }
     }
 
+    @Override
+    public synchronized void verifyReady() {
+        requireState(TerminalSessionState.READY);
+
+        if (terminal == null || !terminal.isUsable()) {
+            state = TerminalSessionState.FAILED;
+            throw new IllegalStateException(
+                    "3270 emulator is not available."
+            );
+        }
+
+        try {
+            List<String> screen = terminal.screen();
+
+            if (!isReadyMonibankMap(screen)) {
+                terminal.printScreen(screen);
+                throw new IllegalStateException(
+                        "MBGW READY screen was not recognized during health check."
+                );
+            }
+        } catch (RuntimeException exception) {
+            state = TerminalSessionState.FAILED;
+            throw exception;
+        }
+    }
+
 
 
     @Override
@@ -230,7 +264,7 @@ public final class KicksTerminalSession implements AutoCloseable {
 
                     navigateToReady();
 
-                    log.info("Logging off TSO user {}", properties.username());
+                    log.info("Logging off TSO user {}", definition.username());
                     terminal.submit("LOGOFF");
                     terminal.await(KicksTerminalSession::isLogon);
                     logoffConfirmed = true;
@@ -252,7 +286,7 @@ public final class KicksTerminalSession implements AutoCloseable {
         if (!logoffConfirmed) {
             throw new IllegalStateException(
                     "TSO logoff was not confirmed for user "
-                            + properties.username() + "."
+                            + definition.username() + "."
             );
         }
     }
@@ -273,23 +307,31 @@ public final class KicksTerminalSession implements AutoCloseable {
 
         terminal.command("Wait(15,Unlock)");
 
-        log.info("Typing TSO user {}", properties.username());
+        log.info("Typing TSO user {}", definition.username());
 
         if (isLogon(screen)) {
-            terminal.command("Wait(15,InputField)");
-            terminal.typeKeys(properties.username());
+            if (hasFormattedLogonField(screen)) {
+                terminal.command("Wait(15,InputField)");
+            } else {
+                /*
+                 * IKJ56700A ENTER USERID is a line-mode prompt. It has no
+                 * 3270 input field, so Wait(InputField) can never succeed.
+                 */
+                terminal.command("Wait(15,Unlock)");
+            }
+            terminal.typeKeys(definition.username());
             terminal.command("Enter()");
         } else {
             terminal.command("Wait(15,Unlock)");
             terminal.typeKeys("LOGON");
             terminal.command("Key(space)");
-            terminal.typeKeys(properties.username());
+            terminal.typeKeys(definition.username());
             terminal.command("Enter()");
         }
 
         String passwordPrompt =
                 "ENTER CURRENT PASSWORD FOR "
-                        + properties.username() + "-";
+                        + definition.username() + "-";
 
         screen = terminal.await(
                 candidate -> contains(candidate, passwordPrompt)
@@ -298,15 +340,22 @@ public final class KicksTerminalSession implements AutoCloseable {
 
         if (contains(screen, "LOGON REJECTED")) {
             terminal.printScreen(screen);
+
+            if (contains(screen, "IN USE")) {
+                throw new TsoUserInUseException(
+                        definition.username()
+                );
+            }
+
             throw new IllegalStateException(
                     "TSO rejected login for user "
-                            + properties.username()
+                            + definition.username()
                             + ". Password was not sent."
             );
         }
 
         log.info("Sending TSO password once");
-        terminal.submit(properties.password());
+        terminal.submit(definition.password());
 
         navigateToReady();
     }
@@ -315,7 +364,7 @@ public final class KicksTerminalSession implements AutoCloseable {
         log.info("Starting KICKS");
 
         List<String> before = terminal.screen();
-        terminal.submit(properties.kicksStartupCommand());
+        terminal.submit(definition.kicksStartupCommand());
 
         terminal.await(
                 screen -> !screen.equals(before) && !isBlank(screen)
@@ -536,13 +585,14 @@ public final class KicksTerminalSession implements AutoCloseable {
         requirePort("port", properties.port());
         requirePort(
                 "emulatorControlPort",
-                properties.emulatorControlPort()
+                definition.emulatorControlPort()
         );
-        requireText("username", properties.username());
-        requireText("password", properties.password());
+        requireText("id", definition.id());
+        requireText("username", definition.username());
+        requireText("password", definition.password());
         requireText(
                 "kicksStartupCommand",
-                properties.kicksStartupCommand()
+                definition.kicksStartupCommand()
         );
     }
 
@@ -659,11 +709,17 @@ public final class KicksTerminalSession implements AutoCloseable {
     }
 
     private static boolean isLogon(List<String> screen) {
-        return contains(screen, "Logon ===>")
+        return hasFormattedLogonField(screen)
                 || contains(
                 screen,
                 "IKJ56700A ENTER USERID"
         );
+    }
+
+    private static boolean hasFormattedLogonField(
+            List<String> screen
+    ) {
+        return contains(screen, "Logon ===>");
     }
 
     private static boolean isReady(List<String> screen) {

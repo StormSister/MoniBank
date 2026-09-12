@@ -4,8 +4,8 @@ import com.monibank.mainframe.hercules.terminal.KicksTerminalSessionManager;
 import com.monibank.mainframe.hercules.terminal.MbgwRequest;
 import com.monibank.mainframe.hercules.terminal.MbgwTerminalResponse;
 import com.monibank.mainframe.model.MainframeResult;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
@@ -16,9 +16,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Component
-@Slf4j
-@RequiredArgsConstructor
 public class KicksMainframeOperationExecutor {
+
+    private static final Logger log = LoggerFactory.getLogger(
+            KicksMainframeOperationExecutor.class
+    );
 
     private static final Duration TERMINAL_TIMEOUT =
             Duration.ofSeconds(30);
@@ -30,6 +32,16 @@ public class KicksMainframeOperationExecutor {
             sessionManagerProvider;
     private final MainframeResponseExecutor responseExecutor;
 
+    public KicksMainframeOperationExecutor(
+            MainframeRequestIdGenerator requestIdGenerator,
+            ObjectProvider<KicksTerminalSessionManager> sessionManagerProvider,
+            MainframeResponseExecutor responseExecutor
+    ) {
+        this.requestIdGenerator = requestIdGenerator;
+        this.sessionManagerProvider = sessionManagerProvider;
+        this.responseExecutor = responseExecutor;
+    }
+
     public MainframeResult execute(
             String operation,
             String input
@@ -40,11 +52,11 @@ public class KicksMainframeOperationExecutor {
                 input
         );
 
-        KicksTerminalSessionManager sessionManager =
-                requireSessionManager();
-
         String requestId =
                 requestIdGenerator.next();
+
+        KicksTerminalSessionManager sessionManager =
+                requireSessionManager(requestId, operation);
 
         MbgwRequest request =
                 new MbgwRequest(
@@ -79,15 +91,22 @@ public class KicksMainframeOperationExecutor {
         return result;
     }
 
-    private KicksTerminalSessionManager requireSessionManager() {
+    private KicksTerminalSessionManager requireSessionManager(
+            String requestId,
+            String operation
+    ) {
 
         KicksTerminalSessionManager sessionManager =
                 sessionManagerProvider.getIfAvailable();
 
         if (sessionManager == null) {
 
-            throw new IllegalStateException(
-                    "KICKS terminal integration is disabled."
+            throw MainframeTechnicalException.unavailable(
+                    "TERMINAL_INTEGRATION_DISABLED",
+                    requestId,
+                    operation,
+                    "The terminal service is unavailable.",
+                    null
             );
         }
 
@@ -129,9 +148,11 @@ public class KicksMainframeOperationExecutor {
              */
             future.cancel(false);
 
-            throw new IllegalStateException(
-                    "KICKS terminal request timed out: "
-                            + request.requestId(),
+            throw MainframeTechnicalException.gatewayTimeout(
+                    "TERMINAL_TIMEOUT",
+                    request.requestId(),
+                    request.operation(),
+                    "No terminal completed the request in time.",
                     exception
             );
 
@@ -140,17 +161,21 @@ public class KicksMainframeOperationExecutor {
             Thread.currentThread().interrupt();
             future.cancel(false);
 
-            throw new IllegalStateException(
-                    "Interrupted while waiting for KICKS request "
-                            + request.requestId(),
+            throw MainframeTechnicalException.unavailable(
+                    "TERMINAL_INTERRUPTED",
+                    request.requestId(),
+                    request.operation(),
+                    "The terminal request was interrupted.",
                     exception
             );
 
         } catch (ExecutionException exception) {
 
-            throw new IllegalStateException(
-                    "KICKS terminal request failed: "
-                            + request.requestId(),
+            throw MainframeTechnicalException.unavailable(
+                    "TERMINAL_FAILURE",
+                    request.requestId(),
+                    request.operation(),
+                    "The terminal session failed while processing the request.",
                     exception.getCause()
             );
         }

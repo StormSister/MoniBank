@@ -2,8 +2,8 @@ package com.monibank.mainframe.hercules;
 
 import com.monibank.mainframe.model.MainframeResult;
 import com.monibank.mainframe.port.MainframeResultStore;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -11,9 +11,11 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 
 @Component
-@Slf4j
-@RequiredArgsConstructor
 public class MainframeResponseExecutor {
+
+    private static final Logger log = LoggerFactory.getLogger(
+            MainframeResponseExecutor.class
+    );
 
     private static final Duration TCP_TIMEOUT =
             Duration.ofSeconds(5);
@@ -25,6 +27,16 @@ public class MainframeResponseExecutor {
     private final MainframeResultStore mainframeResultStore;
     private final MainframeResultParser mainframeResultParser;
     private final MainframeTcpResultListener tcpResultListener;
+
+    public MainframeResponseExecutor(
+            MainframeResultStore mainframeResultStore,
+            MainframeResultParser mainframeResultParser,
+            MainframeTcpResultListener tcpResultListener
+    ) {
+        this.mainframeResultStore = mainframeResultStore;
+        this.mainframeResultParser = mainframeResultParser;
+        this.tcpResultListener = tcpResultListener;
+    }
 
     public MainframeResult execute(
             String requestId,
@@ -51,6 +63,7 @@ public class MainframeResponseExecutor {
             List<String> rawRecords =
                     receiveResult(
                             requestId,
+                            expectedOperation,
                             fallbackDataset
                     );
 
@@ -60,10 +73,19 @@ public class MainframeResponseExecutor {
                     rawRecords.size()
             );
 
-            MainframeResult result =
-                    mainframeResultParser.parse(
-                            rawRecords
-                    );
+            MainframeResult result;
+
+            try {
+                result = mainframeResultParser.parse(rawRecords);
+            } catch (RuntimeException exception) {
+                throw MainframeTechnicalException.badGateway(
+                        "MAINFRAME_PROTOCOL_ERROR",
+                        requestId,
+                        expectedOperation,
+                        "The mainframe returned an invalid response.",
+                        exception
+                );
+            }
 
             log.info(
                     "MAINFRAME [{}] Parsed result - "
@@ -79,6 +101,7 @@ public class MainframeResponseExecutor {
             );
 
             validateResult(
+                    requestId,
                     expectedOperation,
                     result
             );
@@ -103,6 +126,7 @@ public class MainframeResponseExecutor {
 
     private List<String> receiveResult(
             String requestId,
+            String expectedOperation,
             String fallbackDataset
     ) {
 
@@ -134,10 +158,11 @@ public class MainframeResponseExecutor {
 
             if (!hasFallbackDataset(fallbackDataset)) {
 
-                throw new IllegalStateException(
-                        "TCP result timed out and no fallback "
-                                + "dataset is available for request "
-                                + requestId,
+                throw MainframeTechnicalException.gatewayTimeout(
+                        "MAINFRAME_RESULT_TIMEOUT",
+                        requestId,
+                        expectedOperation,
+                        "The mainframe result timed out.",
                         exception
                 );
             }
@@ -151,13 +176,23 @@ public class MainframeResponseExecutor {
 
             return readResultWithRetry(
                     requestId,
+                    expectedOperation,
                     fallbackDataset
+            );
+        } catch (RuntimeException exception) {
+            throw MainframeTechnicalException.unavailable(
+                    "MAINFRAME_RESULT_LISTENER_FAILURE",
+                    requestId,
+                    expectedOperation,
+                    "The mainframe result connection failed.",
+                    exception
             );
         }
     }
 
     private List<String> readResultWithRetry(
             String requestId,
+            String expectedOperation,
             String fallbackDataset
     ) {
 
@@ -210,31 +245,40 @@ public class MainframeResponseExecutor {
             }
         }
 
-        throw new IllegalStateException(
-                "Fallback dataset could not be read: "
-                        + fallbackDataset,
+        throw MainframeTechnicalException.unavailable(
+                "MAINFRAME_RESULT_UNAVAILABLE",
+                requestId,
+                expectedOperation,
+                "The mainframe result is temporarily unavailable.",
                 lastException
         );
     }
 
     private void validateResult(
+            String requestId,
             String expectedOperation,
             MainframeResult result
     ) {
 
-        if ("E".equals(result.header().type())) {
+        if (!"S".equals(result.header().type())
+                && !"E".equals(result.header().type())) {
 
-            throw new IllegalStateException(
-                    "Mainframe error: "
-                            + result.header().code()
+            throw MainframeTechnicalException.badGateway(
+                    "MAINFRAME_PROTOCOL_ERROR",
+                    requestId,
+                    expectedOperation,
+                    "The mainframe returned an unexpected result type.",
+                    null
             );
         }
 
-        if (!"S".equals(result.header().type())) {
-
-            throw new IllegalStateException(
-                    "Unexpected mainframe result type: "
-                            + result.header().type()
+        if (!requestId.equals(result.header().requestId())) {
+            throw MainframeTechnicalException.badGateway(
+                    "MAINFRAME_RESPONSE_MISMATCH",
+                    requestId,
+                    expectedOperation,
+                    "The mainframe response did not match the request.",
+                    null
             );
         }
 
@@ -242,11 +286,20 @@ public class MainframeResponseExecutor {
                 result.header().operation()
         )) {
 
-            throw new IllegalStateException(
-                    "Unexpected mainframe operation: "
-                            + result.header().operation()
-                            + ", expected "
-                            + expectedOperation
+            throw MainframeTechnicalException.badGateway(
+                    "MAINFRAME_RESPONSE_MISMATCH",
+                    requestId,
+                    expectedOperation,
+                    "The mainframe response did not match the operation.",
+                    null
+            );
+        }
+
+        if ("E".equals(result.header().type())) {
+            throw new MainframeBusinessException(
+                    result.header().code(),
+                    requestId,
+                    expectedOperation
             );
         }
     }

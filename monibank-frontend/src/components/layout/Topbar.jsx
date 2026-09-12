@@ -1,7 +1,12 @@
 import { ChevronDown, Menu, Monitor, PanelRightOpen } from 'lucide-react'
 import Button from '../ui/Button.jsx'
+import { useMainframeStatus } from '../../hooks/useMainframeStatus.js'
 
 export default function Topbar({ onOpenNavigation, onToggleConsole }) {
+  const statusQuery = useMainframeStatus()
+  const status = statusQuery.data?.status || (statusQuery.isLoading ? 'CHECKING' : 'UNAVAILABLE')
+  const healthy = status === 'ONLINE'
+
   return (
     <header className="flex flex-wrap items-center justify-between gap-4 border-b border-mb-border px-4 py-4 md:px-6">
       <div className="flex items-center gap-3">
@@ -15,8 +20,8 @@ export default function Topbar({ onOpenNavigation, onToggleConsole }) {
         <button className="hidden min-h-10 items-center gap-2 rounded-lg border border-mb-border bg-mb-surface px-3 text-sm text-mb-text sm:flex">
           <Monitor size={17} className="text-blue-400" /> Legacy Bank (MVS 3.8j) <ChevronDown size={15} />
         </button>
-        <span className="hidden min-h-10 items-center gap-2 rounded-lg border border-mb-border bg-mb-surface px-3 text-xs font-semibold text-mb-terminal md:flex">
-          <span className="size-2 rounded-full bg-mb-terminal shadow-[0_0_10px_#55e36a]" /> ONLINE
+        <span className={`hidden min-h-10 items-center gap-2 rounded-lg border border-mb-border bg-mb-surface px-3 text-xs font-semibold md:flex ${healthy ? 'text-mb-terminal' : 'text-mb-gold-light'}`}>
+          <span className={`size-2 rounded-full bg-current ${healthy ? 'shadow-[0_0_10px_#55e36a]' : ''}`} /> {status}
         </span>
         <Button variant="ghost" className="px-2.5" onClick={onToggleConsole} aria-label="Toggle live mainframe log"><PanelRightOpen size={19} /></Button>
       </div>

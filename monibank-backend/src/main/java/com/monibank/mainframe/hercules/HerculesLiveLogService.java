@@ -1,9 +1,12 @@
 package com.monibank.mainframe.hercules;
 
 import com.monibank.mainframe.port.MainframeLiveLogProcessFactory;
+import com.monibank.mainframe.port.MainframeLiveLogPublisher;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -25,7 +28,11 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class HerculesLiveLogService {
+public class HerculesLiveLogService
+        implements MainframeLiveLogPublisher {
+
+    private static final Logger KICKS_RAW_LOG =
+            LoggerFactory.getLogger("mainframe.kicks.raw");
 
     private static final int BUFFER_CAPACITY = 500;
     private static final int INITIAL_LINES = 100;
@@ -124,7 +131,7 @@ public class HerculesLiveLogService {
                     String line;
 
                     while (running && (line = reader.readLine()) != null) {
-                        publish(line);
+                        publish(LogSource.JES, line);
                     }
                 }
 
@@ -175,10 +182,25 @@ public class HerculesLiveLogService {
                 });
     }
 
-    private void publish(String rawLine) {
+    @Override
+    public void publishKicks(String rawLine) {
+
+        if (rawLine == null || rawLine.isBlank()) {
+            return;
+        }
+
+        KICKS_RAW_LOG.info(rawLine);
+        publish(LogSource.KICKS, rawLine);
+    }
+
+    private void publish(
+            LogSource source,
+            String rawLine
+    ) {
 
         LogLine logLine = new LogLine(
                 sequence.incrementAndGet(),
+                source,
                 rawLine
         );
 
@@ -225,6 +247,7 @@ public class HerculesLiveLogService {
         emitter.send(
                 SseEmitter.event()
                         .id(String.valueOf(logLine.id()))
+                        .name(logLine.source().eventName())
                         .data(logLine.rawLine())
         );
     }
@@ -274,7 +297,23 @@ public class HerculesLiveLogService {
 
     private record LogLine(
             long id,
+            LogSource source,
             String rawLine
     ) {
+    }
+
+    private enum LogSource {
+        JES("jes"),
+        KICKS("kicks");
+
+        private final String eventName;
+
+        LogSource(String eventName) {
+            this.eventName = eventName;
+        }
+
+        private String eventName() {
+            return eventName;
+        }
     }
 }

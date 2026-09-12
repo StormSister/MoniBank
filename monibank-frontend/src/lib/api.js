@@ -6,6 +6,11 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.status = status
     this.body = body
+    this.code = body && typeof body === 'object' ? body.code : undefined
+    this.requestId = body && typeof body === 'object' ? body.requestId : undefined
+    this.operation = body && typeof body === 'object' ? body.operation : undefined
+    this.retryable = Boolean(body && typeof body === 'object' && body.retryable)
+    this.fieldErrors = body && typeof body === 'object' ? body.fieldErrors || {} : {}
   }
 }
 
@@ -26,15 +31,29 @@ export async function apiPatch(path, body, options = {}) {
 }
 
 async function apiRequest(path, { method, body, signal }) {
-  const response = await fetch(apiUrl(path), {
-    method,
-    headers: {
-      Accept: 'application/json',
-      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal,
-  })
+  let response
+
+  try {
+    response = await fetch(apiUrl(path), {
+      method,
+      headers: {
+        Accept: 'application/json',
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
+    })
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error
+
+    const networkError = {
+      code: 'NETWORK_ERROR',
+      message: 'The MoniBank backend is unavailable. Check the connection and try again.',
+      retryable: true,
+    }
+
+    throw new ApiError(networkError.message, 0, networkError)
+  }
 
   if (!response.ok) {
     const errorBody = await readBody(response)
@@ -59,7 +78,13 @@ async function readBody(response) {
 function errorMessage(body, status) {
   if (typeof body === 'string' && body.trim()) return body
   if (body && typeof body === 'object') {
-    return body.message || body.detail || body.error || `Request failed with status ${status}`
+    const base = body.message || body.detail || body.error || `Request failed with status ${status}`
+    const fields = body.fieldErrors && typeof body.fieldErrors === 'object'
+      ? [...new Set(Object.values(body.fieldErrors).filter(Boolean))]
+      : []
+    const fieldDetail = fields.length ? ` ${fields.join(' ')}` : ''
+    const reference = body.requestId ? ` Reference: ${body.requestId}.` : ''
+    return `${base}${fieldDetail}${reference}`
   }
   return `Request failed with status ${status}`
 }

@@ -15,11 +15,30 @@ export function useMainframeLiveLog() {
 
     source.onopen = () => setConnectionState('connected')
     source.onerror = () => setConnectionState('reconnecting')
-    source.onmessage = (event) => {
-      setLines((current) => [...current, event.data].slice(-MAX_LOG_LINES))
+    const receive = (sourceName) => (event) => {
+      const nextLine = {
+        id: event.lastEventId || `${sourceName}-${Date.now()}-${Math.random()}`,
+        source: sourceName,
+        text: event.data,
+      }
+
+      setLines((current) => [...current, nextLine].slice(-MAX_LOG_LINES))
     }
 
-    return () => source.close()
+    const receiveJes = receive('jes')
+    const receiveKicks = receive('kicks')
+    const receiveLegacyJes = receive('jes')
+
+    source.onmessage = receiveLegacyJes
+    source.addEventListener('jes', receiveJes)
+    source.addEventListener('kicks', receiveKicks)
+
+    return () => {
+      source.removeEventListener('jes', receiveJes)
+      source.removeEventListener('kicks', receiveKicks)
+      source.onmessage = null
+      source.close()
+    }
   }, [])
 
   return {

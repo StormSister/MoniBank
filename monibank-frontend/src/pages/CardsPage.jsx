@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CreditCard, Eye, Plus, RefreshCw, Search, ShieldCheck, ShieldX, WalletCards, X } from 'lucide-react'
 import Button from '../components/ui/Button.jsx'
 import FormField, { Input, Select } from '../components/ui/FormField.jsx'
@@ -11,6 +12,7 @@ import { useAccounts } from '../hooks/useAccounts.js'
 import { useCards, useChangeCardStatus, useCreateCard } from '../hooks/useCards.js'
 
 export default function CardsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const cardsQuery = useCards()
   const accountsQuery = useAccounts()
   const createCard = useCreateCard()
@@ -22,6 +24,16 @@ export default function CardsPage() {
   const [detailsId, setDetailsId] = useState(null)
   const [statusId, setStatusId] = useState(null)
   const [success, setSuccess] = useState('')
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'new') return
+
+    createCard.reset()
+    setCreateOpen(true)
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('action')
+    setSearchParams(nextParams, { replace: true })
+  }, [searchParams, setSearchParams])
 
   const cards = cardsQuery.data || []
   const accounts = accountsQuery.data || []

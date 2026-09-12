@@ -1,6 +1,7 @@
 package com.monibank.mainframe.hercules;
 
 import com.monibank.mainframe.config.MainframeProperties;
+import com.monibank.mainframe.port.MainframeLiveLogPublisher;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +53,7 @@ public class MainframeTcpResultListener {
     private static final int LOGICAL_RECORD_LENGTH = 160;
 
     private final MainframeProperties properties;
+    private final MainframeLiveLogPublisher liveLogPublisher;
 
     private final Map<String, PendingResult> pendingRequests =
             new ConcurrentHashMap<>();
@@ -65,6 +67,14 @@ public class MainframeTcpResultListener {
     private volatile Socket socket;
 
     private Thread listenerThread;
+
+    public boolean isConnected() {
+        Socket currentSocket = socket;
+
+        return currentSocket != null
+                && currentSocket.isConnected()
+                && !currentSocket.isClosed();
+    }
 
     @PostConstruct
     public void start() {
@@ -343,6 +353,7 @@ public class MainframeTcpResultListener {
         updateDailyReportJobContext(line);
 
         if (line.startsWith(DAILY_REPORT_PREFIX)) {
+            liveLogPublisher.publishKicks(line);
             handleDailyReportRecord(line);
             return;
         }
@@ -357,7 +368,10 @@ public class MainframeTcpResultListener {
 
         if (line.startsWith(RESULT_PREFIX)) {
             handleResultRecord(line);
+            return;
         }
+
+        liveLogPublisher.publishKicks(line);
     }
 
     private void updateDailyReportJobContext(String line) {
@@ -563,6 +577,8 @@ public class MainframeTcpResultListener {
     }
 
     private void handleResultRecord(String line) {
+
+        liveLogPublisher.publishKicks(line);
 
         if (line.length() != LOGICAL_RECORD_LENGTH) {
             log.debug(

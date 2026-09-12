@@ -1,8 +1,12 @@
 package com.monibank.mainframe;
 
 import com.monibank.mainframe.config.KicksTerminalProperties;
+import com.monibank.mainframe.config.KicksTerminalDefinition;
 import com.monibank.mainframe.hercules.terminal.*;
 import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,14 +42,24 @@ class KicksTerminalSessionProbe {
                         true,
                         "127.0.0.1",
                         13271,
-                        13270,
-                        username,
-                        password,
-                        kicksCommand
+                        Duration.ofSeconds(2),
+                        1,
+                        List.of(
+                                new KicksTerminalDefinition(
+                                        "TERM-1",
+                                        13270,
+                                        username,
+                                        password,
+                                        kicksCommand
+                                )
+                        )
                 );
 
         try (KicksTerminalSession session =
-                     new KicksTerminalSession(properties)) {
+                     new KicksTerminalSession(
+                             properties,
+                             properties.sessions().getFirst()
+                     )) {
 
             session.open();
 
