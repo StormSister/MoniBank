@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <property
+            name="KICKS_LOG_FILE"
+            value="${MAINFRAME_KICKS_LOG_PATH:-logs/kicks-frames.log}"
+    />
+
+    <appender name="KICKS_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${KICKS_LOG_FILE}</file>
+        <encoder>
+            <pattern>%msg%n</pattern>
+            <charset>US-ASCII</charset>
+        </encoder>
+        <rollingPolicy
+                class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${KICKS_LOG_FILE}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>25MB</maxFileSize>
+            <maxHistory>14</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <appender name="KICKS_ASYNC"
+              class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>2048</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="KICKS_FILE"/>
+    </appender>
+
+    <logger name="mainframe.kicks.raw"
+            level="INFO"
+            additivity="false">
+        <appender-ref ref="KICKS_ASYNC"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

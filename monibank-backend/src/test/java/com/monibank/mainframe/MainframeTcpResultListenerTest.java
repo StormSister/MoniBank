@@ -5,6 +5,7 @@ import com.monibank.mainframe.hercules.MainframeTcpResultListener;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,9 +16,12 @@ class MainframeTcpResultListenerTest {
     void correlatesMbsRecordsWithRequestIdJobName()
             throws Exception {
 
+        List<String> liveLines = new ArrayList<>();
+
         MainframeTcpResultListener listener =
                 new MainframeTcpResultListener(
-                        properties()
+                        properties(),
+                        liveLines::add
                 );
 
         listener.registerDailyReport("R1234567");
@@ -52,6 +56,15 @@ class MainframeTcpResultListenerTest {
         assertEquals(
                 "MBS;E;20260907;EUR;OK",
                 result.getLast()
+        );
+        assertEquals(5, liveLines.size());
+        assertEquals(
+                "****Z  START  JOB  276  R1234567  READ CLOSE",
+                liveLines.getFirst()
+        );
+        assertEquals(
+                "MBS;E;20260907;EUR;OK",
+                liveLines.getLast()
         );
 
         listener.unregisterDailyReport("R1234567");

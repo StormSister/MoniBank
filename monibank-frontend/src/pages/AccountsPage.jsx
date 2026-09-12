@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ArrowDownAZ, Building2, CircleDollarSign, Eye, Plus, RefreshCw, Search, ShieldCheck, ShieldX, Users, X } from 'lucide-react'
 import CustomerFormFields from '../components/customer/CustomerFormFields.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -13,6 +14,7 @@ import { useAccounts, useChangeAccountStatus, useCreateAccount } from '../hooks/
 import { useCreateCustomer, useCustomers } from '../hooks/useCustomers.js'
 
 export default function AccountsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const accountsQuery = useAccounts()
   const changeStatus = useChangeAccountStatus()
   const [search, setSearch] = useState('')
@@ -23,6 +25,15 @@ export default function AccountsPage() {
   const [detailsId, setDetailsId] = useState(null)
   const [statusId, setStatusId] = useState(null)
   const [success, setSuccess] = useState('')
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'new') return
+
+    setCreateOpen(true)
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('action')
+    setSearchParams(nextParams, { replace: true })
+  }, [searchParams, setSearchParams])
 
   const accounts = accountsQuery.data || []
   const details = accounts.find((account) => account.accountId === detailsId)

@@ -1,4 +1,14 @@
-import { ArrowDownToLine, ArrowUpFromLine, CircleDollarSign, Users } from 'lucide-react'
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  CircleDollarSign,
+  CreditCard,
+  FileText,
+  Landmark,
+  UserRoundPlus,
+  Users,
+} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useDailyCloseReport } from '../hooks/useDailyCloseReport.js'
 import { useRecentTransactions } from '../hooks/useRecentTransactions.js'
 import StatCard from '../components/dashboard/StatCard.jsx'
@@ -9,6 +19,7 @@ import Button from '../components/ui/Button.jsx'
 const money = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const reportQuery = useDailyCloseReport('EUR')
   const transactionsQuery = useRecentTransactions(5)
   const report = reportQuery.data
@@ -80,41 +91,79 @@ export default function DashboardPage() {
         </div>
       </Panel>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,270px),1fr))] gap-3">
-        <Panel title="System Status" className="min-h-58">
-          <div className="space-y-4 p-4 text-xs">
-            <div className="flex justify-between"><div><p className="text-mb-muted">Core System</p><p className="mt-1">MVS 3.8j / Hercules</p></div><StatusBadge>ONLINE</StatusBadge></div>
-            <Metric label="CPU" value="2%" width="22%" />
-            <Metric label="Memory" value="64 MB" width="48%" />
-            <div><p className="text-mb-muted">Uptime</p><p className="mt-1">2d 14h 32m</p></div>
-          </div>
-        </Panel>
-        <Panel title="Jobs Overview" action={<button className="text-xs text-mb-muted">View all</button>}>
-          <div className="flex items-center justify-around gap-5 p-5">
-            <div className="donut grid size-28 place-items-center rounded-full"><div className="grid size-17 place-items-center rounded-full bg-mb-panel text-center"><span><b className="block text-xl">16</b><small className="text-mb-muted">Total Jobs</small></span></div></div>
-            <div className="space-y-3 text-xs"><JobLegend color="bg-mb-terminal" label="Completed" value="12" /><JobLegend color="bg-mb-gold" label="Running" value="2" /><JobLegend color="bg-blue-400" label="Queued" value="1" /><JobLegend color="bg-mb-danger" label="Failed" value="1" /></div>
-          </div>
-        </Panel>
-        <Panel title="Last Job" action={<StatusBadge variant={report?.state === 'CLOSED' ? 'success' : 'warning'}>{report?.state || 'NO REPORT'}</StatusBadge>}>
-          <div className="p-4"><div className="text-2xl font-semibold">{report?.requestId || '—'}</div><div className="mt-1 text-xs text-mb-muted">DAYSTAT</div><div className="mt-5 font-mono text-sm text-mb-terminal">RC={report ? (report.resultCode === 'OK' ? '0000' : report.resultCode) : '——'}</div><Button className="mt-7 w-full" variant="secondary">View Job Details</Button></div>
-        </Panel>
-      </div>
-
       <Panel title="Quick Actions">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,145px),1fr))] gap-2 p-3 sm:p-4">
-          {['New Customer', 'Open Account', 'Deposit', 'Withdraw', 'Issue Card', 'Statement'].map((label) => <Button key={label} className="min-h-18 flex-col">{label}</Button>)}
+        <div className="grid grid-cols-2 gap-2.5 p-3 sm:grid-cols-3 sm:p-4 xl:grid-cols-6">
+          {QUICK_ACTIONS.map((action) => (
+            <QuickAction
+              key={action.label}
+              {...action}
+              onClick={() => navigate(action.to)}
+            />
+          ))}
         </div>
       </Panel>
     </div>
   )
 }
 
-function Metric({ label, value, width }) {
-  return <div><div className="flex justify-between"><span className="text-mb-muted">{label}</span><span>{value}</span></div><div className="mt-2 h-1.5 rounded bg-white/6"><div className="h-full rounded bg-mb-teal" style={{ width }} /></div></div>
+const QUICK_ACTIONS = [
+  { label: 'New Customer', to: '/customers?action=new', icon: UserRoundPlus, tone: 'teal' },
+  { label: 'Open Account', to: '/accounts?action=new', icon: Landmark, tone: 'indigo' },
+  { label: 'Deposit', to: '/cash-desk?operation=deposit', icon: ArrowDownToLine, tone: 'green' },
+  { label: 'Withdraw', to: '/cash-desk?operation=withdrawal', icon: ArrowUpFromLine, tone: 'red' },
+  { label: 'Issue Card', to: '/cards?action=new', icon: CreditCard, tone: 'blue' },
+  { label: 'Statement', to: '/statements', icon: FileText, tone: 'violet' },
+]
+
+const QUICK_ACTION_TONES = {
+  teal: {
+    icon: 'text-[#55d7d0]',
+    iconSurface: 'border-[#55d7d0]/20 bg-[#55d7d0]/10 shadow-[0_0_24px_rgba(85,215,208,.08)]',
+    hover: 'hover:border-[#55d7d0]/35 hover:shadow-[0_12px_32px_rgba(85,215,208,.08)]',
+  },
+  indigo: {
+    icon: 'text-[#719cff]',
+    iconSurface: 'border-[#719cff]/20 bg-[#719cff]/10 shadow-[0_0_24px_rgba(113,156,255,.08)]',
+    hover: 'hover:border-[#719cff]/35 hover:shadow-[0_12px_32px_rgba(113,156,255,.08)]',
+  },
+  green: {
+    icon: 'text-mb-terminal',
+    iconSurface: 'border-mb-terminal/20 bg-mb-terminal/10 shadow-[0_0_24px_rgba(85,227,106,.08)]',
+    hover: 'hover:border-mb-terminal/35 hover:shadow-[0_12px_32px_rgba(85,227,106,.08)]',
+  },
+  red: {
+    icon: 'text-mb-danger',
+    iconSurface: 'border-mb-danger/20 bg-mb-danger/10 shadow-[0_0_24px_rgba(255,91,87,.08)]',
+    hover: 'hover:border-mb-danger/35 hover:shadow-[0_12px_32px_rgba(255,91,87,.08)]',
+  },
+  blue: {
+    icon: 'text-[#61a0ff]',
+    iconSurface: 'border-[#61a0ff]/20 bg-[#61a0ff]/10 shadow-[0_0_24px_rgba(97,160,255,.08)]',
+    hover: 'hover:border-[#61a0ff]/35 hover:shadow-[0_12px_32px_rgba(97,160,255,.08)]',
+  },
+  violet: {
+    icon: 'text-[#9a8cff]',
+    iconSurface: 'border-[#9a8cff]/20 bg-[#9a8cff]/10 shadow-[0_0_24px_rgba(154,140,255,.08)]',
+    hover: 'hover:border-[#9a8cff]/35 hover:shadow-[0_12px_32px_rgba(154,140,255,.08)]',
+  },
 }
 
-function JobLegend({ color, label, value }) {
-  return <div className="flex items-center gap-2"><span className={`size-2 rounded-full ${color}`} /><span className="w-18 text-mb-muted">{label}</span><b>{value}</b></div>
+function QuickAction({ label, icon: Icon, tone, onClick }) {
+  const colors = QUICK_ACTION_TONES[tone]
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group relative min-h-28 overflow-hidden rounded-xl border border-mb-border bg-[linear-gradient(145deg,rgba(20,43,57,.78),rgba(10,27,38,.96))] px-3 py-4 text-center outline-none transition duration-200 hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-mb-gold/60 ${colors.hover}`}
+    >
+      <span className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent opacity-0 transition group-hover:opacity-100" />
+      <span className={`mx-auto grid size-11 place-items-center rounded-xl border transition duration-200 group-hover:scale-105 ${colors.iconSurface} ${colors.icon}`}>
+        <Icon size={25} strokeWidth={2} />
+      </span>
+      <span className="mt-3 block text-sm font-medium text-mb-text transition group-hover:text-white">{label}</span>
+    </button>
+  )
 }
 
 function LoadingRows() {

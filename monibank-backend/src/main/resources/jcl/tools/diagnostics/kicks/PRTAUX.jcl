@@ -1,0 +1,12 @@
+//PRTAUX  JOB (TEST),'PRINT KICKS TRACE',
+//             CLASS=A,
+//             MSGCLASS=A,
+//             MSGLEVEL=(1,1),
+//             USER=${JOB_USER},
+//             PASSWORD=${JOB_PASSWORD}
+//PRINT    EXEC PGM=IEBGENER
+//SYSPRINT DD SYSOUT=*
+//SYSUT1   DD DSN=HERC01.KICKS.AUXTRC,DISP=SHR
+//SYSUT2   DD SYSOUT=*
+//SYSIN    DD DUMMY
+//

@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   ArrowDownAZ,
   Eye,
@@ -30,6 +31,7 @@ const INITIAL_FORM = {
 const NAME_PATTERN = /^[A-Za-z][A-Za-z .'-]*$/
 
 export default function CustomersPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const customersQuery = useCustomers()
   const createCustomer = useCreateCustomer()
   const changeStatus = useChangeCustomerStatus()
@@ -65,6 +67,16 @@ export default function CustomersPage() {
   const activeCount = customers.filter((customer) => customer.status === 'A').length
   const inactiveCount = customers.filter((customer) => customer.status === 'I').length
   const filtersActive = search.trim() || status !== 'ALL' || sort !== 'LAST_NAME_ASC'
+
+  useEffect(() => {
+    if (searchParams.get('action') !== 'new') return
+
+    createCustomer.reset()
+    setCreateOpen(true)
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('action')
+    setSearchParams(nextParams, { replace: true })
+  }, [searchParams, setSearchParams])
 
   const openCreate = () => {
     createCustomer.reset()

@@ -145,6 +145,9 @@ public class MainframeResultParser {
         String operation =
                 value(parts, 2);
 
+        String requestId =
+                value(parts, 3);
+
         String entityId =
                 value(parts, 4);
 
@@ -157,6 +160,7 @@ public class MainframeResultParser {
         return new MainframeResultHeader(
                 type,
                 operation,
+                requestId,
                 code,
                 entityId,
                 status

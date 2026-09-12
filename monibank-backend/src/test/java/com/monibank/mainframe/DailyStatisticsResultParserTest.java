@@ -45,6 +45,7 @@ class DailyStatisticsResultParserTest {
                 new MainframeResultHeader(
                         "S",
                         "DAYSTAT",
+                        "R0000001",
                         "OK",
                         "R1234567",
                         "C"

@@ -7,6 +7,7 @@ import CardsPage from './pages/CardsPage.jsx'
 import CashDeskPage from './pages/CashDeskPage.jsx'
 import StatementsPage from './pages/StatementsPage.jsx'
 import ReportsPage from './pages/ReportsPage.jsx'
+import SystemStatusPage from './pages/SystemStatusPage.jsx'
 import PlaceholderPage from './pages/PlaceholderPage.jsx'
 
 export default function App() {
@@ -21,9 +22,8 @@ export default function App() {
         <Route path="cash-desk" element={<CashDeskPage />} />
         <Route path="statements" element={<StatementsPage />} />
         <Route path="jobs" element={<PlaceholderPage title="Jobs" />} />
-        <Route path="audit-log" element={<PlaceholderPage title="Audit Log" />} />
         <Route path="reports" element={<ReportsPage />} />
-        <Route path="settings" element={<PlaceholderPage title="Settings" />} />
+        <Route path="system-status" element={<SystemStatusPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
