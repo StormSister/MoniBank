@@ -4,6 +4,7 @@ import com.monibank.mainframe.hercules.terminal.KicksTerminalSessionManager;
 import com.monibank.mainframe.hercules.terminal.MbgwRequest;
 import com.monibank.mainframe.hercules.terminal.MbgwTerminalResponse;
 import com.monibank.mainframe.model.MainframeResult;
+import com.monibank.operations.LegacyOperationTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -31,15 +32,18 @@ public class KicksMainframeOperationExecutor {
     private final ObjectProvider<KicksTerminalSessionManager>
             sessionManagerProvider;
     private final MainframeResponseExecutor responseExecutor;
+    private final LegacyOperationTracker operationTracker;
 
     public KicksMainframeOperationExecutor(
             MainframeRequestIdGenerator requestIdGenerator,
             ObjectProvider<KicksTerminalSessionManager> sessionManagerProvider,
-            MainframeResponseExecutor responseExecutor
+            MainframeResponseExecutor responseExecutor,
+            LegacyOperationTracker operationTracker
     ) {
         this.requestIdGenerator = requestIdGenerator;
         this.sessionManagerProvider = sessionManagerProvider;
         this.responseExecutor = responseExecutor;
+        this.operationTracker = operationTracker;
     }
 
     public MainframeResult execute(
@@ -54,41 +58,64 @@ public class KicksMainframeOperationExecutor {
 
         String requestId =
                 requestIdGenerator.next();
+        operationTracker.started(requestId, operation);
 
-        KicksTerminalSessionManager sessionManager =
-                requireSessionManager(requestId, operation);
+        try {
+            KicksTerminalSessionManager sessionManager =
+                    requireSessionManager(requestId, operation);
 
-        MbgwRequest request =
-                new MbgwRequest(
-                        operation,
-                        requestId,
-                        input
-                );
+            MbgwRequest request = new MbgwRequest(
+                    operation,
+                    requestId,
+                    input
+            );
 
-        log.info(
-                "KICKS [{}] {} started",
-                requestId,
-                operation
-        );
+            log.info(
+                    "KICKS [{}] {} started",
+                    requestId,
+                    operation
+            );
 
-        MainframeResult result =
-                responseExecutor.execute(
-                        requestId,
-                        operation,
-                        null,
-                        () -> sendTerminalRequest(
-                                sessionManager,
-                                request
-                        )
-                );
+            MainframeResult result = responseExecutor.execute(
+                    requestId,
+                    operation,
+                    null,
+                    () -> sendTerminalRequest(sessionManager, request)
+            );
 
-        log.info(
-                "KICKS [{}] {} completed successfully",
-                requestId,
-                operation
-        );
-
-        return result;
+            operationTracker.succeeded(
+                    requestId,
+                    result.header().code()
+            );
+            log.info(
+                    "KICKS [{}] {} completed successfully",
+                    requestId,
+                    operation
+            );
+            return result;
+        } catch (MainframeBusinessException exception) {
+            operationTracker.businessFailed(
+                    requestId,
+                    exception.code()
+            );
+            throw exception;
+        } catch (MainframeTechnicalException exception) {
+            operationTracker.technicalFailed(
+                    requestId,
+                    exception.code(),
+                    exception.getClass().getSimpleName(),
+                    exception.retryable()
+            );
+            throw exception;
+        } catch (RuntimeException exception) {
+            operationTracker.technicalFailed(
+                    requestId,
+                    "UNEXPECTED_ERROR",
+                    exception.getClass().getSimpleName(),
+                    false
+            );
+            throw exception;
+        }
     }
 
     private KicksTerminalSessionManager requireSessionManager(

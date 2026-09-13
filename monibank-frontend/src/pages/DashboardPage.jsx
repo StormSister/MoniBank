@@ -1,15 +1,21 @@
 import {
+  Activity,
   ArrowDownToLine,
   ArrowUpFromLine,
+  Clock3,
   CircleDollarSign,
   CreditCard,
   FileText,
   Landmark,
+  Server,
+  SquareTerminal,
   UserRoundPlus,
   Users,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useDailyCloseReport } from '../hooks/useDailyCloseReport.js'
+import { useMainframeStatus } from '../hooks/useMainframeStatus.js'
+import { useOperationSummary } from '../hooks/useOperations.js'
 import { useRecentTransactions } from '../hooks/useRecentTransactions.js'
 import StatCard from '../components/dashboard/StatCard.jsx'
 import Panel from '../components/ui/Panel.jsx'
@@ -20,6 +26,8 @@ const money = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximum
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const statusQuery = useMainframeStatus()
+  const operationSummaryQuery = useOperationSummary({ hours: 24 })
   const reportQuery = useDailyCloseReport('EUR')
   const transactionsQuery = useRecentTransactions(5)
   const report = reportQuery.data
@@ -30,6 +38,16 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-4">
+      <SystemOverview
+        mainframe={statusQuery.data}
+        loading={statusQuery.isLoading}
+        error={statusQuery.isError}
+        operationSummary={operationSummaryQuery.data}
+        operationLoading={operationSummaryQuery.isLoading}
+        onOpen={() => navigate('/system-status')}
+        onOpenOperations={() => navigate('/operations')}
+      />
+
       {reportUnavailable && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-mb-gold/25 bg-mb-gold/7 px-4 py-3 text-sm text-mb-gold-light">
           <span>{reportErrorMessage(reportQuery.error)}</span>
@@ -60,7 +78,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <Panel title="Recent Transactions · Live" action={<button className="text-xs text-mb-muted hover:text-mb-gold-light">View all</button>}>
+      <Panel title="Recent Transactions · Live" action={<button type="button" onClick={() => navigate('/statements')} className="text-xs text-mb-muted hover:text-mb-gold-light">Open statements</button>}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-xs">
             <thead className="bg-white/[0.025] text-[10px] uppercase tracking-wide text-mb-muted"><tr>{['Date & time', 'Type', 'Account', 'Detail', 'Amount', 'Balance after', 'Status'].map((heading) => <th key={heading} className="px-4 py-3 font-medium">{heading}</th>)}</tr></thead>
@@ -104,6 +122,163 @@ export default function DashboardPage() {
       </Panel>
     </div>
   )
+}
+
+function SystemOverview({
+  mainframe,
+  loading,
+  error,
+  operationSummary,
+  operationLoading,
+  onOpen,
+  onOpenOperations,
+}) {
+  const connections = mainframe?.connections
+  const status = mainframe?.status || (loading ? 'CHECKING' : 'UNAVAILABLE')
+  const healthy = status === 'ONLINE'
+
+  return (
+    <section className="overflow-hidden rounded-xl border border-mb-border bg-[linear-gradient(110deg,rgba(16,36,49,.94),rgba(9,27,39,.94)_60%,rgba(45,212,191,.055))]">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className={`grid size-10 shrink-0 place-items-center rounded-xl border ${healthy ? 'border-mb-terminal/25 bg-mb-terminal/10 text-mb-terminal' : 'border-mb-gold/25 bg-mb-gold/10 text-mb-gold-light'}`}>
+            <Server size={20} />
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-mb-text">
+                {mainframe?.system || 'MVS 3.8j'} · {mainframe?.systemId || 'TK5R'}
+              </p>
+              <StatusBadge variant={healthy ? 'success' : error ? 'danger' : 'warning'}>{status}</StatusBadge>
+            </div>
+            <p className="mt-1 text-xs text-mb-muted">
+              Legacy core system overview · detailed infrastructure health is available in System Status.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex w-full flex-wrap items-center justify-between gap-4 sm:w-auto sm:justify-end">
+          <OperationHealthDonut
+            summary={operationSummary}
+            loading={operationLoading}
+            onOpen={onOpenOperations}
+          />
+          <button
+            type="button"
+            onClick={onOpen}
+            className="shrink-0 text-left text-xs font-medium text-mb-muted transition hover:text-mb-gold-light sm:text-right"
+          >
+            Open System Status →
+          </button>
+        </div>
+      </div>
+
+      <dl className="grid gap-px border-t border-mb-border bg-mb-border sm:grid-cols-2 xl:grid-cols-4">
+        <SystemMetric
+          icon={SquareTerminal}
+          label="Terminal pool"
+          value={`${connections?.readyTerminals ?? 0} / ${connections?.configuredTerminals ?? 0} ready`}
+        />
+        <SystemMetric
+          icon={Activity}
+          label="Request queue"
+          value={`${connections?.queuedRequests ?? 0} waiting`}
+        />
+        <SystemMetric
+          icon={Server}
+          label="Interfaces"
+          value={`${shortState(connections?.reader)} · ${shortState(connections?.resultPrinter)}`}
+        />
+        <SystemMetric
+          icon={Clock3}
+          label="Last health check"
+          value={formatHealthCheck(mainframe?.checkedAt)}
+        />
+      </dl>
+    </section>
+  )
+}
+
+function OperationHealthDonut({ summary, loading, onOpen }) {
+  const success = summary?.successCount ?? 0
+  const businessErrors = summary?.businessErrorCount ?? 0
+  const technicalErrors = summary?.technicalErrorCount ?? 0
+  const failed = businessErrors + technicalErrors
+  const total = summary?.totalCount ?? success + failed
+  const successPercent = total > 0 ? (success / total) * 100 : 0
+  const businessPercent = total > 0 ? (businessErrors / total) * 100 : 0
+  const businessEnd = successPercent + businessPercent
+  const ring = total > 0
+    ? `conic-gradient(#55e36a 0 ${successPercent}%, #d7a23b ${successPercent}% ${businessEnd}%, #ff5b57 ${businessEnd}% 100%)`
+    : 'conic-gradient(rgba(141,161,175,.2) 0 100%)'
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex items-center gap-3 rounded-xl border border-mb-border/80 bg-black/10 px-3 py-2 text-left outline-none transition hover:border-mb-teal/35 hover:bg-mb-teal/[0.04] focus-visible:ring-2 focus-visible:ring-mb-gold/60"
+      aria-label={total > 0
+        ? `Operations in the last 24 hours: ${success} successful and ${failed} failed. Open operations.`
+        : 'No operations recorded in the last 24 hours. Open operations.'}
+    >
+      <span
+        role="img"
+        aria-hidden="true"
+        className="relative grid size-16 shrink-0 place-items-center rounded-full shadow-[0_0_22px_rgba(85,227,106,.08)]"
+        style={{ background: ring }}
+      >
+        <span className="grid size-12 place-items-center rounded-full border border-white/[0.04] bg-mb-panel">
+          <span className="text-center">
+            <span className="block font-mono text-sm font-semibold leading-none text-mb-text">
+              {loading ? '…' : total}
+            </span>
+            <span className="mt-1 block text-[8px] uppercase tracking-wider text-mb-muted">24h</span>
+          </span>
+        </span>
+      </span>
+
+      <span className="min-w-28">
+        <span className="block text-[10px] font-medium uppercase tracking-wide text-mb-muted">Operations</span>
+        <span className="mt-1.5 flex items-center gap-1.5 text-xs">
+          <span className="size-1.5 rounded-full bg-mb-terminal" />
+          <span className="text-mb-terminal">{success} successful</span>
+        </span>
+        <span className="mt-1 flex items-center gap-1.5 text-xs">
+          <span className="size-1.5 rounded-full bg-mb-danger" />
+          <span className={failed > 0 ? 'text-mb-danger' : 'text-mb-muted'}>{failed} failed</span>
+        </span>
+        <span className="mt-1.5 block text-[9px] text-mb-muted transition group-hover:text-mb-gold-light">Open details →</span>
+      </span>
+    </button>
+  )
+}
+
+function SystemMetric({ icon: Icon, label, value }) {
+  return (
+    <div className="flex items-center gap-3 bg-mb-panel/95 px-4 py-3">
+      <Icon size={17} className="shrink-0 text-mb-teal" />
+      <div className="min-w-0">
+        <dt className="text-[10px] uppercase tracking-wide text-mb-muted">{label}</dt>
+        <dd className="mt-0.5 truncate text-xs font-medium text-mb-text" title={value}>{value}</dd>
+      </div>
+    </div>
+  )
+}
+
+function shortState(value) {
+  if (value === 'CONNECTED') return 'Connected'
+  if (!value) return 'Checking'
+  return value.charAt(0) + value.slice(1).toLowerCase()
+}
+
+function formatHealthCheck(value) {
+  if (!value) return 'Waiting for data'
+  return new Date(value).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
 }
 
 const QUICK_ACTIONS = [

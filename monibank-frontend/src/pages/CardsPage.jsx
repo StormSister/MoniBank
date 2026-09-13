@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { CreditCard, Eye, Plus, RefreshCw, Search, ShieldCheck, ShieldX, WalletCards, X } from 'lucide-react'
+import { CalendarDays, CreditCard, Eye, Plus, RefreshCw, Search, ShieldCheck, ShieldX, WalletCards, X } from 'lucide-react'
 import Button from '../components/ui/Button.jsx'
 import FormField, { Input, Select } from '../components/ui/FormField.jsx'
 import Modal from '../components/ui/Modal.jsx'
@@ -123,9 +123,98 @@ function CreateCardModal({ open, accountsQuery, mutation, onClose, onCreated }) 
     <FormField id="card-account" label="Active account" error={errors.accountId} hint="The card will inherit the account customer and currency."><Select id="card-account" value={form.accountId} onChange={(event) => update('accountId', event.target.value)} disabled={accountsQuery.isLoading}><option value="">Select account…</option>{activeAccounts.map((account) => <option key={account.accountId} value={account.accountId}>{account.accountId} · {account.iban} · {account.customerId}</option>)}</Select></FormField>
     {!accountsQuery.isLoading && !accountsQuery.isError && activeAccounts.length === 0 && <Notice>No active account is available. Open or activate an account first.</Notice>}
     {selected && <div className="grid gap-3 rounded-lg border border-mb-teal/20 bg-mb-teal/5 p-4 text-sm sm:grid-cols-3"><Mini label="Customer" value={selected.customerId} /><Mini label="Balance" value={`${money(selected.balance)} ${selected.currency}`} /><Mini label="Account type" value={selected.type === 'OD' ? 'Overdraft' : 'Standard'} /></div>}
-    <div className="grid gap-5 sm:grid-cols-2"><FormField id="card-limit" label="Daily limit" error={errors.dailyLimit} hint="Positive amount with up to two decimal places."><Input id="card-limit" type="number" min="0.01" step="0.01" value={form.dailyLimit} onChange={(event) => update('dailyLimit', event.target.value)} /></FormField><FormField id="card-expiry" label="Expiry month" error={errors.expiry} hint="The current month or a future month."><Input id="card-expiry" type="month" min={currentMonth()} value={form.expiry} onChange={(event) => update('expiry', event.target.value)} /></FormField></div>
+    <FormField id="card-limit" label="Daily limit" error={errors.dailyLimit} hint="Positive amount with up to two decimal places."><Input id="card-limit" className="sm:max-w-xs" type="number" min="0.01" step="0.01" value={form.dailyLimit} onChange={(event) => update('dailyLimit', event.target.value)} /></FormField>
+    <ExpiryPicker value={form.expiry} error={errors.expiry} onChange={(value) => update('expiry', value)} />
     <p className="text-xs text-mb-muted">Card ID, number, type and network are assigned by the mainframe. Card numbers stay masked in the interface.</p>
   </div><footer className="flex justify-end gap-3 border-t border-mb-border px-5 py-4"><Button type="button" variant="ghost" onClick={onClose} disabled={mutation.isPending}>Cancel</Button><Button type="submit" variant="primary" disabled={mutation.isPending || accountsQuery.isLoading}>{mutation.isPending && <RefreshCw className="animate-spin" size={16} />}{mutation.isPending ? 'Issuing in MVS…' : 'Issue card'}</Button></footer></form></Modal>
+}
+
+const EXPIRY_MONTHS = [
+  ['01', 'Jan'], ['02', 'Feb'], ['03', 'Mar'], ['04', 'Apr'],
+  ['05', 'May'], ['06', 'Jun'], ['07', 'Jul'], ['08', 'Aug'],
+  ['09', 'Sep'], ['10', 'Oct'], ['11', 'Nov'], ['12', 'Dec'],
+]
+
+function ExpiryPicker({ value, error, onChange }) {
+  const [selectedYear, selectedMonth] = value.split('-')
+  const current = currentMonth()
+  const currentYear = Number(current.slice(0, 4))
+  const years = Array.from({ length: 11 }, (_, index) => String(currentYear + index))
+
+  const selectYear = (year) => {
+    const firstValidMonth = year === current.slice(0, 4) && selectedMonth < current.slice(5, 7)
+      ? current.slice(5, 7)
+      : selectedMonth
+    onChange(`${year}-${firstValidMonth}`)
+  }
+
+  return (
+    <fieldset className={`overflow-hidden rounded-xl border bg-black/10 ${error ? 'border-mb-danger/55' : 'border-mb-border'}`}>
+      <legend className="sr-only">Card expiry month and year</legend>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-mb-border px-4 py-3">
+        <div className="flex items-center gap-2.5">
+          <CalendarDays size={18} className="text-mb-gold-light" />
+          <div>
+            <p className="text-sm font-medium text-mb-text">Card expiry</p>
+            <p className="mt-0.5 text-[11px] text-mb-muted">Choose the month and year explicitly.</p>
+          </div>
+        </div>
+        <div className="rounded-lg border border-mb-gold/25 bg-mb-gold/[0.07] px-3 py-2 text-right">
+          <span className="block text-[8px] uppercase tracking-[0.18em] text-mb-muted">Valid thru</span>
+          <span className="mt-0.5 block font-mono text-sm font-semibold tracking-wider text-mb-gold-light">
+            {selectedMonth}/{selectedYear.slice(2)}
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-4 p-4">
+        <div>
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-mb-muted">Month</p>
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+            {EXPIRY_MONTHS.map(([month, label]) => {
+              const candidate = `${selectedYear}-${month}`
+              const disabled = candidate < current
+              const active = month === selectedMonth
+              return (
+                <button
+                  key={month}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onChange(candidate)}
+                  className={`rounded-lg border px-2 py-2 text-center outline-none transition focus-visible:ring-2 focus-visible:ring-mb-gold/60 disabled:cursor-not-allowed disabled:opacity-25 ${active ? 'border-mb-gold/60 bg-mb-gold/15 text-mb-gold-light shadow-[0_0_18px_rgba(215,162,59,.08)]' : 'border-mb-border bg-mb-ink/35 text-mb-muted hover:border-mb-teal/35 hover:text-mb-text'}`}
+                  aria-pressed={active}
+                >
+                  <span className="block text-xs font-semibold">{month}</span>
+                  <span className="mt-0.5 block text-[9px] uppercase">{label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.14em] text-mb-muted">Year</p>
+          <div className="flex flex-wrap gap-2">
+            {years.map((year) => {
+              const active = year === selectedYear
+              return (
+                <button
+                  key={year}
+                  type="button"
+                  onClick={() => selectYear(year)}
+                  className={`min-w-16 rounded-lg border px-3 py-2 font-mono text-xs outline-none transition focus-visible:ring-2 focus-visible:ring-mb-gold/60 ${active ? 'border-mb-teal/55 bg-mb-teal/12 text-mb-teal' : 'border-mb-border bg-mb-ink/35 text-mb-muted hover:border-mb-teal/35 hover:text-mb-text'}`}
+                  aria-pressed={active}
+                >
+                  {year}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+      {error && <p className="border-t border-mb-danger/25 bg-mb-danger/[0.05] px-4 py-2.5 text-xs text-mb-danger">{error}</p>}
+    </fieldset>
+  )
 }
 
 function CardDetailsModal({ card, account, onClose, onStatus }) { return <Modal open={Boolean(card)} onClose={onClose} title="Card details" description={card?.cardId}>{card && <><div className="space-y-5 p-5"><div className="relative overflow-hidden rounded-xl border border-mb-gold/25 bg-[linear-gradient(135deg,#132b38,#091820)] p-5"><CreditCard className="absolute -bottom-4 -right-2 text-mb-gold/8" size={110} /><p className="text-xs uppercase tracking-[0.18em] text-mb-gold-light">{card.network || 'Payment card'}</p><p className="mt-5 font-mono text-xl tracking-[0.16em]">{maskCard(card.cardNumber)}</p><div className="mt-5 flex justify-between text-xs text-mb-muted"><span>{card.type || '—'}</span><span>EXPIRES {formatExpiry(card.expiry)}</span></div></div><div className="flex justify-end"><EntityStatus status={card.status} /></div><dl className="grid gap-4 sm:grid-cols-2"><Detail label="Account ID" value={card.accountId} mono /><Detail label="Customer ID" value={card.customerId} mono /><Detail label="IBAN" value={account?.iban || 'Account data unavailable'} mono /><Detail label="Daily limit" value={money(card.dailyLimit)} /><Detail label="Spent today" value={money(card.dailySpent)} /><Detail label="Spent date" value={formatCompactDate(card.spentDate)} /><Detail label="Record source" value="MBANK.CARD / VSAM" /></dl></div><footer className="flex justify-end gap-3 border-t border-mb-border px-5 py-4"><Button variant="ghost" onClick={onClose}>Close</Button><Button variant={card.status === 'A' ? 'danger' : 'secondary'} onClick={onStatus}>{card.status === 'A' ? <ShieldX size={16} /> : <ShieldCheck size={16} />}{card.status === 'A' ? 'Deactivate' : 'Activate'}</Button></footer></>}</Modal> }

@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
-  BadgeDollarSign, BarChart3, BriefcaseBusiness, CreditCard, FileClock,
-  Gauge, Landmark, ReceiptText, ServerCog, Users, X,
+  Activity, BadgeDollarSign, BarChart3, BriefcaseBusiness, CreditCard,
+  Gauge, GraduationCap, Landmark, ReceiptText, ServerCog, Users, X,
 } from 'lucide-react'
 import Brand from './Brand.jsx'
 
@@ -20,7 +20,7 @@ const sections = [
   {
     label: 'Operations',
     items: [
-      ['Jobs', '/jobs', FileClock],
+      ['Operations', '/operations', Activity],
       ['Reports', '/reports', BarChart3],
     ],
   },
@@ -32,7 +32,7 @@ const sections = [
   },
 ]
 
-export default function Sidebar({ open, onClose }) {
+export default function Sidebar({ open, onClose, onOpenProjectInfo }) {
   return (
     <>
       {open && <button aria-label="Close navigation" onClick={onClose} className="fixed inset-0 z-30 bg-black/60 lg:hidden" />}
@@ -82,6 +82,20 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="relative mt-4 space-y-2.5 border-t border-mb-border pt-4">
+          <button
+            type="button"
+            onClick={onOpenProjectInfo}
+            className="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-mb-teal/15 bg-mb-teal/[.035] px-2.5 py-2 text-left outline-none transition hover:border-mb-teal/30 hover:bg-mb-teal/[.07] focus-visible:ring-2 focus-visible:ring-mb-gold/50"
+          >
+            <span className="grid size-8.5 shrink-0 place-items-center rounded-lg border border-mb-teal/20 bg-mb-teal/[.07] text-mb-teal transition group-hover:border-mb-teal/35">
+              <GraduationCap size={19} strokeWidth={1.8} />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-xs font-semibold text-mb-text">Educational demo</span>
+              <span className="block truncate text-[10px] text-mb-muted">About this project</span>
+            </span>
+          </button>
+
           <div className="flex items-center gap-3 rounded-xl border border-mb-border bg-[linear-gradient(135deg,rgba(16,36,49,.85),rgba(8,25,35,.9))] p-3 shadow-[inset_0_1px_rgba(255,255,255,.025)]">
             <div className="grid size-10 place-items-center rounded-full border border-mb-gold/35 bg-gradient-to-br from-mb-gold to-amber-700 font-bold text-mb-ink shadow-[0_0_22px_rgba(215,162,59,.13)]">M</div>
             <div className="min-w-0 flex-1">
