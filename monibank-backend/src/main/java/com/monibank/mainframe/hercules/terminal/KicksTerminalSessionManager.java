@@ -2,6 +2,7 @@ package com.monibank.mainframe.hercules.terminal;
 
 import com.monibank.mainframe.config.KicksTerminalDefinition;
 import com.monibank.mainframe.config.KicksTerminalProperties;
+import com.monibank.operations.LegacyOperationTracker;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +48,7 @@ public final class KicksTerminalSessionManager
     private final KicksTerminalProperties properties;
     private final KicksTerminalSessionFactory sessionFactory;
     private final TsoSessionRecovery tsoSessionRecovery;
+    private final LegacyOperationTracker operationTracker;
     private final BlockingQueue<QueueEntry> queue =
             new LinkedBlockingQueue<>();
     private final List<TerminalWorker> terminalWorkers =
@@ -60,14 +62,33 @@ public final class KicksTerminalSessionManager
             KicksTerminalProperties properties,
             KicksTerminalSessionFactory sessionFactory
     ) {
-        this(properties, sessionFactory, username -> false);
+        this(
+                properties,
+                sessionFactory,
+                username -> false,
+                LegacyOperationTracker.noop()
+        );
+    }
+
+    public KicksTerminalSessionManager(
+            KicksTerminalProperties properties,
+            KicksTerminalSessionFactory sessionFactory,
+            TsoSessionRecovery tsoSessionRecovery
+    ) {
+        this(
+                properties,
+                sessionFactory,
+                tsoSessionRecovery,
+                LegacyOperationTracker.noop()
+        );
     }
 
     @Autowired
     public KicksTerminalSessionManager(
             KicksTerminalProperties properties,
             KicksTerminalSessionFactory sessionFactory,
-            TsoSessionRecovery tsoSessionRecovery
+            TsoSessionRecovery tsoSessionRecovery,
+            LegacyOperationTracker operationTracker
     ) {
         this.properties = Objects.requireNonNull(
                 properties,
@@ -80,6 +101,10 @@ public final class KicksTerminalSessionManager
         this.tsoSessionRecovery = Objects.requireNonNull(
                 tsoSessionRecovery,
                 "tsoSessionRecovery cannot be null."
+        );
+        this.operationTracker = Objects.requireNonNull(
+                operationTracker,
+                "operationTracker cannot be null."
         );
     }
 
@@ -130,7 +155,11 @@ public final class KicksTerminalSessionManager
 
         CompletableFuture<MbgwTerminalResponse> result =
                 new CompletableFuture<>();
-        RequestEntry entry = new RequestEntry(request, result);
+        RequestEntry entry = new RequestEntry(
+                request,
+                result,
+                Instant.now()
+        );
         queue.add(entry);
 
         if (!acceptingRequests.get() && queue.remove(entry)) {
@@ -489,15 +518,56 @@ public final class KicksTerminalSessionManager
 
         private void execute(RequestEntry entry) {
             currentRequestId = entry.request().requestId();
+            Instant startedAt = Instant.now();
+            long queueDurationMs = elapsedMillis(
+                    entry.queuedAt(),
+                    startedAt
+            );
+
+            log.info(
+                    "MBOP event=ASSIGNED requestId={} operation={} worker={} username={} queueMs={}",
+                    currentRequestId,
+                    entry.request().operation(),
+                    definition.id(),
+                    definition.username(),
+                    queueDurationMs
+            );
+            operationTracker.assigned(
+                    currentRequestId,
+                    definition.id(),
+                    definition.username(),
+                    queueDurationMs
+            );
 
             try {
                 MbgwTerminalResponse response =
                         session.execute(entry.request());
                 entry.result().complete(response);
                 workerState = TerminalSessionState.READY;
+
+                log.info(
+                        "MBOP event=TERMINAL_COMPLETED requestId={} operation={} worker={} username={} terminalStatus={} queueMs={} durationMs={}",
+                        currentRequestId,
+                        entry.request().operation(),
+                        definition.id(),
+                        definition.username(),
+                        response.status(),
+                        queueDurationMs,
+                        elapsedMillis(startedAt, Instant.now())
+                );
             } catch (Exception exception) {
                 entry.result().completeExceptionally(exception);
                 recordFailure(exception);
+                log.warn(
+                        "MBOP event=TERMINAL_FAILED requestId={} operation={} worker={} username={} errorType={} queueMs={} durationMs={}",
+                        currentRequestId,
+                        entry.request().operation(),
+                        definition.id(),
+                        definition.username(),
+                        exception.getClass().getSimpleName(),
+                        queueDurationMs,
+                        elapsedMillis(startedAt, Instant.now())
+                );
                 log.warn(
                         "KICKS terminal {} failed request {}; rebuilding session",
                         definition.id(),
@@ -579,6 +649,16 @@ public final class KicksTerminalSessionManager
                 : message;
     }
 
+    private static long elapsedMillis(
+            Instant startedAt,
+            Instant finishedAt
+    ) {
+        return Math.max(
+                0L,
+                Duration.between(startedAt, finishedAt).toMillis()
+        );
+    }
+
     private static void requireText(String name, String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalStateException(
@@ -601,11 +681,13 @@ public final class KicksTerminalSessionManager
 
     private record RequestEntry(
             MbgwRequest request,
-            CompletableFuture<MbgwTerminalResponse> result
+            CompletableFuture<MbgwTerminalResponse> result,
+            Instant queuedAt
     ) implements QueueEntry {
         private RequestEntry {
             Objects.requireNonNull(request, "request cannot be null.");
             Objects.requireNonNull(result, "result cannot be null.");
+            Objects.requireNonNull(queuedAt, "queuedAt cannot be null.");
         }
     }
 

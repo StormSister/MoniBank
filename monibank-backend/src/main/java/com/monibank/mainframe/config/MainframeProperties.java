@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record MainframeProperties(
         String provider,
         String host,
+        String httpHost,
         int readerPort,
         int consolePort,
         int httpPort,

@@ -4,6 +4,7 @@ export default function StatCard({ label, value, suffix, change, icon: Icon, ton
     blue: 'bg-blue-500/16 text-blue-400',
     gold: 'bg-mb-gold/16 text-mb-gold-light',
     green: 'bg-mb-terminal/14 text-mb-terminal',
+    danger: 'bg-mb-danger/14 text-mb-danger',
   }
 
   return (

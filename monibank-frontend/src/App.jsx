@@ -7,8 +7,8 @@ import CardsPage from './pages/CardsPage.jsx'
 import CashDeskPage from './pages/CashDeskPage.jsx'
 import StatementsPage from './pages/StatementsPage.jsx'
 import ReportsPage from './pages/ReportsPage.jsx'
+import OperationsPage from './pages/OperationsPage.jsx'
 import SystemStatusPage from './pages/SystemStatusPage.jsx'
-import PlaceholderPage from './pages/PlaceholderPage.jsx'
 
 export default function App() {
   return (
@@ -21,7 +21,7 @@ export default function App() {
         <Route path="cards" element={<CardsPage />} />
         <Route path="cash-desk" element={<CashDeskPage />} />
         <Route path="statements" element={<StatementsPage />} />
-        <Route path="jobs" element={<PlaceholderPage title="Jobs" />} />
+        <Route path="operations" element={<OperationsPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="system-status" element={<SystemStatusPage />} />
       </Route>

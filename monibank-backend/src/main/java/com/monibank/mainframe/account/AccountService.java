@@ -33,6 +33,21 @@ public class AccountService {
         return parseAccounts(result);
     }
 
+    public AccountResponse getAccount(
+            String accountId
+    ) {
+
+        validateRequestedAccountId(accountId);
+
+        return getAccounts()
+                .stream()
+                .filter(account -> accountId.equals(account.accountId()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Account does not exist: " + accountId + "."
+                ));
+    }
+
     public AccountResponse createAccount(
             CreateAccountRequest request
     ) {
@@ -153,6 +168,18 @@ public class AccountService {
                     operation
                             + " returned invalid account ID: "
                             + accountId
+            );
+        }
+    }
+
+    private void validateRequestedAccountId(
+            String accountId
+    ) {
+
+        if (accountId == null
+                || !accountId.matches("A\\d{12}")) {
+            throw new IllegalArgumentException(
+                    "Account ID must match A followed by 12 digits."
             );
         }
     }

@@ -153,7 +153,7 @@ public final class HerculesHttpTsoSessionRecovery
     }
 
     private URI operatorUri() {
-        String host = mainframeProperties.host();
+        String host = mainframeProperties.httpHost();
         int port = mainframeProperties.httpPort();
 
         if (host == null || host.isBlank()) {

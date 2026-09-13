@@ -51,6 +51,22 @@ button { cursor: pointer; }
 
   .mb-input::placeholder { color: rgba(141, 161, 175, .62); }
   .mb-input:focus { border-color: rgba(215, 162, 59, .65); box-shadow: 0 0 0 3px rgba(215, 162, 59, .1); }
+
+  .mb-input[type="date"] {
+    color-scheme: dark;
+  }
+
+  .mb-input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: .9;
+    filter: invert(84%) sepia(45%) saturate(779%) hue-rotate(348deg) brightness(99%) contrast(90%);
+    transition: opacity 150ms ease, filter 150ms ease;
+  }
+
+  .mb-input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    filter: invert(91%) sepia(44%) saturate(650%) hue-rotate(338deg) brightness(102%) contrast(92%);
+  }
 }
 
 .terminal-grid {
