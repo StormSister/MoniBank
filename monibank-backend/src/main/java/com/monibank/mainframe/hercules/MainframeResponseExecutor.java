@@ -57,15 +57,50 @@ public class MainframeResponseExecutor {
             /*
              * Request is sent only after the listener has been
              * registered. This prevents losing a fast response.
+             *
+             * A terminal may fail while preparing its screen for the next
+             * request after COBOL has already committed and emitted the
+             * final correlated MBR record. Preserve that send failure, but
+             * still inspect the result channel before deciding the business
+             * outcome.
              */
-            sendRequest.run();
+            RuntimeException sendFailure = null;
 
-            List<String> rawRecords =
-                    receiveResult(
+            try {
+                sendRequest.run();
+            } catch (RuntimeException exception) {
+                sendFailure = exception;
+                log.warn(
+                        "MAINFRAME [{}] Request channel failed; "
+                                + "checking for an authoritative result: {}",
+                        requestId,
+                        exception.getMessage()
+                );
+            }
+
+            List<String> rawRecords;
+
+            try {
+                rawRecords = receiveResult(
                             requestId,
                             expectedOperation,
                             fallbackDataset
-                    );
+                );
+            } catch (RuntimeException resultFailure) {
+                if (sendFailure != null) {
+                    sendFailure.addSuppressed(resultFailure);
+                    throw sendFailure;
+                }
+                throw resultFailure;
+            }
+
+            if (sendFailure != null) {
+                log.warn(
+                        "MAINFRAME [{}] Correlated result recovered after "
+                                + "request-channel failure",
+                        requestId
+                );
+            }
 
             log.info(
                     "MAINFRAME [{}] Parsing {} result record(s)",

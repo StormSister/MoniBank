@@ -17,7 +17,7 @@ export default function AppLayout() {
     try {
       window.localStorage.setItem(EDUCATIONAL_NOTICE_KEY, 'acknowledged')
     } catch {
-      // The notice still works when browser storage is unavailable.
+    
     }
   }
 

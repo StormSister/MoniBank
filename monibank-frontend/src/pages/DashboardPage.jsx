@@ -374,3 +374,11 @@ function reportErrorMessage(error) {
   }
   return 'The previous-day close report could not be loaded from the mainframe. Live transactions remain available below.'
 }
+
+function getGreeting() {
+  const hour = new Date().getHours()
+
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}

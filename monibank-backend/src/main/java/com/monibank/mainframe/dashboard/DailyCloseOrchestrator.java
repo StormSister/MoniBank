@@ -2,6 +2,7 @@ package com.monibank.mainframe.dashboard;
 
 import com.monibank.mainframe.config.DailyCloseProperties;
 import com.monibank.mainframe.dashboard.api.DailyCloseReportResponse;
+import com.monibank.mainframe.hercules.VsamAccessCoordinator;
 import com.monibank.mainframe.interest.InterestPostingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class DailyCloseOrchestrator {
     private final InterestPostingService interestPostingService;
     private final DailyStatisticsService dailyStatisticsService;
     private final DailyCloseReportService reportService;
+    private final VsamAccessCoordinator vsamAccessCoordinator;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
 
@@ -42,26 +44,11 @@ public class DailyCloseOrchestrator {
         }
 
         try {
-            log.info(
-                    "DAILY CLOSE started for {} {}",
-                    businessDate,
-                    currency
+            return vsamAccessCoordinator.execute(
+                    "DAILY-" + businessDate,
+                    "DAILYCLOSE",
+                    () -> executeClose(businessDate, currency)
             );
-
-            interestPostingService.postDailyInterest(
-                    businessDate,
-                    currency,
-                    properties.interestRateBasisPoints()
-            );
-
-            DailyCloseReportResponse report =
-                    dailyStatisticsService.calculate(
-                            businessDate,
-                            currency
-                    );
-
-            reportService.cacheReport(report);
-            return report;
         } finally {
             running.set(false);
             log.info(
@@ -69,6 +56,32 @@ public class DailyCloseOrchestrator {
                     businessDate
             );
         }
+    }
+
+    private DailyCloseReportResponse executeClose(
+            LocalDate businessDate,
+            String currency
+    ) {
+        log.info(
+                "DAILY CLOSE started for {} {}",
+                businessDate,
+                currency
+        );
+
+        interestPostingService.postDailyInterest(
+                businessDate,
+                currency,
+                properties.interestRateBasisPoints()
+        );
+
+        DailyCloseReportResponse report =
+                dailyStatisticsService.calculate(
+                        businessDate,
+                        currency
+                );
+
+        reportService.cacheReport(report);
+        return report;
     }
 
     public boolean isRunning() {

@@ -54,3 +54,13 @@ desktop.ini
 *.swp
 *.swo
 *~
+
+# Runtime logs
+logs/
+**/logs/
+*.log
+*.log.*
+
+# Operation journal
+**/operations/*.jsonl
+**/operations/*.jsonl.*

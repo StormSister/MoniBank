@@ -1,6 +1,11 @@
 HELP.md
 target/
-.mvn/wrapper/maven-wrapper.jar
+out/
+logs/
+*.class
+*.log
+*.log.*
+*~
 !**/src/main/**/target/
 !**/src/test/**/target/
 
@@ -36,5 +41,13 @@ build/
 **/application-local.properties
 **/application-local.yml
 **/application-local.yaml
-**/application-prod.yml
-**/application.yml
+
+# Runtime logs
+logs/
+**/logs/
+*.log
+*.log.*
+
+# Operation journal
+**/operations/*.jsonl
+**/operations/*.jsonl.*

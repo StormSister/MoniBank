@@ -1,9 +1,0 @@
-//VOLLIST JOB (TEST),'LIST VOLUMES',
-//             CLASS=A,
-//             MSGCLASS=A,
-//             MSGLEVEL=(1,1)
-//STEP1    EXEC PGM=IDCAMS
-//SYSPRINT DD SYSOUT=*
-//SYSIN    DD *
-  LISTCAT ALL
-/*
