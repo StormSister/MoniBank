@@ -1,0 +1,47 @@
+services:
+  backend:
+    image: ghcr.io/stormsister/monibank-backend:${MONIBANK_IMAGE_TAG:-latest}
+    container_name: monibank-backend
+    restart: unless-stopped
+    init: true
+
+    env_file:
+      - /srv/monibank/config/backend.env
+
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+    volumes:
+      - /srv/monibank/backend/operations:/app/logs/operations
+
+    expose:
+      - "8080"
+
+    networks:
+      - monibank-internal
+
+    stop_grace_period: 45s
+
+    mem_limit: 1g
+
+  frontend:
+    image: ghcr.io/stormsister/monibank-frontend:${MONIBANK_IMAGE_TAG:-latest}
+    container_name: monibank-frontend
+    restart: unless-stopped
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    ports:
+      - "${MONIBANK_WEB_BIND:-127.0.0.1}:${MONIBANK_WEB_PORT:-8088}:80"
+
+    networks:
+      - monibank-internal
+
+    mem_limit: 128m
+
+networks:
+  monibank-internal:
+    external: true
+    name: monibank-internal
