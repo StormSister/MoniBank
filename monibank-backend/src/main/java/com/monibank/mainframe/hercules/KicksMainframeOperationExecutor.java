@@ -33,17 +33,20 @@ public class KicksMainframeOperationExecutor {
             sessionManagerProvider;
     private final MainframeResponseExecutor responseExecutor;
     private final LegacyOperationTracker operationTracker;
+    private final VsamAccessCoordinator vsamAccessCoordinator;
 
     public KicksMainframeOperationExecutor(
             MainframeRequestIdGenerator requestIdGenerator,
             ObjectProvider<KicksTerminalSessionManager> sessionManagerProvider,
             MainframeResponseExecutor responseExecutor,
-            LegacyOperationTracker operationTracker
+            LegacyOperationTracker operationTracker,
+            VsamAccessCoordinator vsamAccessCoordinator
     ) {
         this.requestIdGenerator = requestIdGenerator;
         this.sessionManagerProvider = sessionManagerProvider;
         this.responseExecutor = responseExecutor;
         this.operationTracker = operationTracker;
+        this.vsamAccessCoordinator = vsamAccessCoordinator;
     }
 
     public MainframeResult execute(
@@ -76,11 +79,18 @@ public class KicksMainframeOperationExecutor {
                     operation
             );
 
-            MainframeResult result = responseExecutor.execute(
+            MainframeResult result = vsamAccessCoordinator.execute(
                     requestId,
                     operation,
-                    null,
-                    () -> sendTerminalRequest(sessionManager, request)
+                    () -> responseExecutor.execute(
+                            requestId,
+                            operation,
+                            null,
+                            () -> sendTerminalRequest(
+                                    sessionManager,
+                                    request
+                            )
+                    )
             );
 
             operationTracker.succeeded(

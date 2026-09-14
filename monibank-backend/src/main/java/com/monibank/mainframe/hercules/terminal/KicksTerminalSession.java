@@ -155,17 +155,18 @@ public final class KicksTerminalSession
             terminal.command("Enter()");
 
             List<String> resultScreen = terminal.await(
-                    screen -> isCompletedMbgwResponse(screen)
-                            && hasResultFor(
+                    screen -> isCompletedMbgwResponse(
                             screen,
-                            request.requestId()
+                            request
                     )
             );
 
-            MbgwTerminalStatus status = contains(
-                    resultScreen,
-                    "SUCCESS"
-            )
+            MbgwTerminalStatus status =
+                    hasFinalMbrHeader(
+                            resultScreen,
+                            "S",
+                            request
+                    ) || contains(resultScreen, "SUCCESS")
                     ? MbgwTerminalStatus.SUCCESS
                     : MbgwTerminalStatus.ERROR;
 
@@ -640,11 +641,38 @@ public final class KicksTerminalSession
     }
 
     private static boolean isCompletedMbgwResponse(
-            List<String> screen
+            List<String> screen,
+            MbgwRequest request
     ) {
-        return isMonibankMap(screen)
-                && (contains(screen, "SUCCESS")
-                || contains(screen, "ERROR"));
+        if (!isMonibankMap(screen)) {
+            return false;
+        }
+
+        boolean completedState =
+                (contains(screen, "SUCCESS")
+                        || contains(screen, "ERROR"))
+                        && hasResultFor(
+                                screen,
+                                request.requestId()
+                        );
+
+        return completedState
+                || hasFinalMbrHeader(screen, "S", request)
+                || hasFinalMbrHeader(screen, "E", request);
+    }
+
+    private static boolean hasFinalMbrHeader(
+            List<String> screen,
+            String type,
+            MbgwRequest request
+    ) {
+        String prefix = "MBR;" + type + ";";
+
+        return screen.stream().anyMatch(line ->
+                line.contains(prefix)
+                        && line.contains(request.operation())
+                        && line.contains(request.requestId())
+        );
     }
 
     private static boolean isReadyMonibankMap(

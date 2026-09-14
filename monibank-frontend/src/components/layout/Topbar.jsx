@@ -12,7 +12,7 @@ export default function Topbar({ onOpenNavigation, onToggleConsole }) {
       <div className="flex items-center gap-3">
         <button onClick={onOpenNavigation} className="rounded-lg border border-mb-border p-2 text-mb-muted lg:hidden" aria-label="Open navigation"><Menu size={20} /></button>
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-mb-text md:text-2xl">Good afternoon, Monika <span aria-hidden>👋</span></h1>
+          <h1 className="text-xl font-semibold tracking-tight text-mb-text md:text-2xl">{getGreeting()}, Monika <span aria-hidden>👋</span></h1>
           <p className="mt-1 text-sm text-mb-muted">Here’s what’s happening in your core banking today.</p>
         </div>
       </div>
@@ -27,4 +27,26 @@ export default function Topbar({ onOpenNavigation, onToggleConsole }) {
       </div>
     </header>
   )
+}
+
+function getGreeting() {
+  const hour = new Date().getHours()
+
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+export function useGreeting() {
+  const [greeting, setGreeting] = useState(getGreeting)
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setGreeting(getGreeting())
+    }, 60_000)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  return greeting
 }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/mainframe/jobs")
+@RequestMapping("/api/admin/mainframe/jobs")
 @RequiredArgsConstructor
 public class MainframeJobController {
 

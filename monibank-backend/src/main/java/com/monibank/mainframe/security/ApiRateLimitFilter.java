@@ -6,10 +6,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 20)
 public final class ApiRateLimitFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(
@@ -44,7 +43,7 @@ public final class ApiRateLimitFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return !properties.enabled()
                 || !request.getRequestURI().startsWith("/api/")
-                || isAdministrativePath(request.getRequestURI())
+                || isAuthenticatedAdmin()
                 || "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 
@@ -100,7 +99,7 @@ public final class ApiRateLimitFilter extends OncePerRequestFilter {
     private BucketKey bucketKey(String clientId, RequestScope scope) {
         BucketKey requested = new BucketKey(clientId, scope);
         if (buckets.containsKey(requested)
-                || buckets.size() < properties.maxTrackedClients() * 2) {
+                || buckets.size() < properties.maxTrackedClients() * 3) {
             return requested;
         }
         return new BucketKey(OVERFLOW_CLIENT, scope);
@@ -109,6 +108,9 @@ public final class ApiRateLimitFilter extends OncePerRequestFilter {
     private RequestScope classify(HttpServletRequest request) {
         String path = request.getRequestURI();
         String method = request.getMethod().toUpperCase(Locale.ROOT);
+        if ("/api/admin/auth/token".equals(path)) {
+            return RequestScope.AUTH;
+        }
         if ("GET".equals(method)
                 || "HEAD".equals(method)
                 || ("POST".equals(method)
@@ -120,16 +122,21 @@ public final class ApiRateLimitFilter extends OncePerRequestFilter {
 
     private RateLimitProperties.Policy policy(RequestScope scope) {
         return switch (scope) {
+            case AUTH -> properties.auth();
             case READ -> properties.read();
             case WRITE -> properties.write();
         };
     }
 
-    private static boolean isAdministrativePath(String path) {
-        return path.equals("/api/admin")
-                || path.startsWith("/api/admin/")
-                || path.equals("/api/mainframe/jobs")
-                || path.startsWith("/api/mainframe/jobs/");
+    private static boolean isAuthenticatedAdmin() {
+        Authentication authentication = SecurityContextHolder.getContext()
+                .getAuthentication();
+        return authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream()
+                .anyMatch(authority -> "SCOPE_admin".equals(
+                        authority.getAuthority()
+                ));
     }
 
     private String clientId(HttpServletRequest request) {
@@ -181,6 +188,7 @@ public final class ApiRateLimitFilter extends OncePerRequestFilter {
         response.setHeader("Retry-After", String.valueOf(retryAfterSeconds));
 
         String message = switch (scope) {
+            case AUTH -> "Too many administrator sign-in attempts.";
             case READ -> "Too many read requests.";
             case WRITE -> "Too many operations that change demo data.";
         };
@@ -197,6 +205,7 @@ public final class ApiRateLimitFilter extends OncePerRequestFilter {
     }
 
     private enum RequestScope {
+        AUTH,
         READ,
         WRITE
     }

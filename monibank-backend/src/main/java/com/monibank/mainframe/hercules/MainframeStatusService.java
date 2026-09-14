@@ -31,6 +31,7 @@ public class MainframeStatusService {
     private final DockerHerculesRuntimeMetricsSource metricsSource;
     private final ObjectProvider<KicksTerminalSessionManager>
             terminalManagerProvider;
+    private final VsamAccessCoordinator vsamAccessCoordinator;
 
     private volatile HerculesRuntimeMetrics lastRuntimeMetrics;
     private volatile boolean readerAvailable;
@@ -87,6 +88,7 @@ public class MainframeStatusService {
         int queuedRequests = terminalManager == null
                 ? 0
                 : terminalManager.queuedRequestCount();
+        queuedRequests += vsamAccessCoordinator.waitingRequestCount();
 
         boolean resultPrinterConnected = resultListener.isConnected();
         String overallStatus = overallStatus(

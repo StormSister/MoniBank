@@ -10,6 +10,7 @@ public record RateLimitProperties(
         String trustedClientIpHeader,
         int maxTrackedClients,
         Duration idleTtl,
+        Policy auth,
         Policy read,
         Policy write
 ) {
@@ -25,6 +26,7 @@ public record RateLimitProperties(
                     "Rate-limit idle-ttl must be positive."
             );
         }
+        requirePolicy(auth, "auth");
         requirePolicy(read, "read");
         requirePolicy(write, "write");
     }
