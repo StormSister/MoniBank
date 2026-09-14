@@ -278,7 +278,10 @@ public class MainframeTcpResultListener {
                 }
 
                 log.warn(
-                        "Mainframe result TCP connection lost: {}",
+                        "Mainframe result TCP connection to {}:{} failed - {}: {}",
+                        properties.resultHost(),
+                        properties.resultPort(),
+                        e.getClass().getSimpleName(),
                         e.getMessage()
                 );
 
