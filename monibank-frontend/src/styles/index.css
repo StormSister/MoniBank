@@ -133,7 +133,7 @@ button { cursor: pointer; }
 /* Reserve room for the fixed console only when both surfaces can remain useful. */
 @media (min-width: 1680px) {
   .app-workspace.console-open {
-    margin-right: 760px;
+    margin-right: var(--live-console-width, 520px);
   }
 }
 

@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronsLeftRight, Maximize2, Minimize2, Minus, Trash2, X } from 'lucide-react'
 import { MAX_LOG_LINES, useMainframeLiveLog } from '../../hooks/useMainframeLiveLog.js'
 
-const WIDTH_STORAGE_KEY = 'monibank.live-console.width.v3'
-const DEFAULT_WIDTH = 760
-const MIN_WIDTH = 480
-const MAX_WIDTH = 1100
+const WIDTH_STORAGE_KEY = 'monibank.live-console.width.v4'
+const DEFAULT_WIDTH = 520
+const MIN_WIDTH = 420
+const MAX_WIDTH = 760
 
 export default function LiveConsole({ open, onClose }) {
   const { lines, connectionState, clear } = useMainframeLiveLog()
@@ -48,8 +48,18 @@ export default function LiveConsole({ open, onClose }) {
   }, [resizing])
 
   useEffect(() => {
-    window.localStorage.setItem(WIDTH_STORAGE_KEY, String(width))
-  }, [width])
+  window.localStorage.setItem(WIDTH_STORAGE_KEY, String(width))
+  document.documentElement.style.setProperty(
+    '--live-console-width',
+    `${width}px`,
+  )
+
+  return () => {
+    document.documentElement.style.removeProperty(
+      '--live-console-width',
+    )
+  }
+}, [width])
 
   const connected = connectionState === 'connected'
   const sourceLines = sourceFilter === 'activity'

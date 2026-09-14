@@ -13,6 +13,7 @@ services:
 
     volumes:
       - /srv/monibank/backend/operations:/app/logs/operations
+      - /srv/monibank/mainframe-logs:/mainframe-logs:ro
 
     expose:
       - "8080"
