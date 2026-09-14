@@ -72,22 +72,25 @@ class MainframeTcpResultListenerTest {
 
     private MainframeProperties properties() {
 
-        return new MainframeProperties(
-                "HERCULES",
-                "localhost",
-                3505,
-                3270,
-                8038,
-                5001,
-                "localhost",
-                "root",
-                "/tmp/mainframe.log",
-                "HERC01",
-                "SECRET",
-                "localhost",
-                "/tmp/printer.txt",
-                "monibank-mainframe",
-                "/opt/mvs-tk5/prt/prt00e.txt"
-        );
+        {
+            return new MainframeProperties(
+                    "HERCULES",
+                    "127.0.0.1",
+                    "127.0.0.1",
+                    3505,
+                    3270,
+                    8038,
+                    5001,
+                    "127.0.0.1",
+                    "root",
+                    "/tmp/mainframe.log",
+                    "HERC01",
+                    "MONIBANK",
+                    "127.0.0.1",
+                    "/tmp/printer.txt",
+                    "monibank-mainframe",
+                    "/opt/mvs-tk5/log/hardcopy.log"
+            );
+        }
     }
 }
