@@ -1,5 +1,5 @@
 package com.monibank.mainframe;
-
+import com.monibank.mainframe.hercules.terminal.HerculesHttpTsoSessionRecovery;
 import com.monibank.mainframe.config.KicksTerminalDefinition;
 import com.monibank.mainframe.config.KicksTerminalProperties;
 import com.monibank.mainframe.config.MainframeProperties;
@@ -98,6 +98,7 @@ class HerculesHttpTsoSessionRecoveryTest {
     ) {
         return new MainframeProperties(
                 "HERCULES",
+                "127.0.0.1",
                 "127.0.0.1",
                 3505,
                 3270,
