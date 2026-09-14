@@ -17,8 +17,18 @@ RUN apt-get update \
         openssh-client \
         ca-certificates \
         curl \
-    && command -v s3270 \
     && rm -rf /var/lib/apt/lists/*
+
+# J3270 passes "-scriptport localhost:PORT", while Linux s3270
+# expects "-scriptport PORT". Keep the original binary and place
+# a compatibility wrapper earlier in PATH.
+RUN mv /usr/bin/s3270 /usr/bin/s3270.real
+
+COPY docker/s3270-wrapper.sh /usr/local/bin/s3270
+
+RUN sed -i 's/\r$//' /usr/local/bin/s3270 \
+    && chmod 755 /usr/local/bin/s3270 \
+    && command -v s3270
 
 RUN groupadd --system monibank \
     && useradd \
