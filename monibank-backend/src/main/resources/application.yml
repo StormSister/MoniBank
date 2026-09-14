@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: monibank-backend
+
+monibank:
+  security:
+    admin:
+      username: ${MONIBANK_ADMIN_USERNAME}
+      password: ${MONIBANK_ADMIN_PASSWORD}
+      jwt-secret: ${MONIBANK_JWT_SECRET}
+      token-ttl: ${MONIBANK_ADMIN_TOKEN_TTL:PT1H}
+
+  rate-limit:
+    enabled: ${MONIBANK_RATE_LIMIT_ENABLED:true}
+    # Leave blank unless the application is behind a trusted reverse proxy.
+    trusted-client-ip-header: ${MONIBANK_TRUSTED_CLIENT_IP_HEADER:}
+    max-tracked-clients: ${MONIBANK_RATE_LIMIT_MAX_CLIENTS:10000}
+    idle-ttl: ${MONIBANK_RATE_LIMIT_IDLE_TTL:PT2H}
+    cleanup-interval: ${MONIBANK_RATE_LIMIT_CLEANUP_INTERVAL:PT5M}
+    auth:
+      capacity: ${MONIBANK_AUTH_LIMIT_CAPACITY:5}
+      refill-tokens: ${MONIBANK_AUTH_LIMIT_REFILL_TOKENS:5}
+      refill-period: ${MONIBANK_AUTH_LIMIT_REFILL_PERIOD:PT15M}
+    read:
+      capacity: ${MONIBANK_READ_LIMIT_CAPACITY:240}
+      refill-tokens: ${MONIBANK_READ_LIMIT_REFILL_TOKENS:240}
+      refill-period: ${MONIBANK_READ_LIMIT_REFILL_PERIOD:PT1M}
+    write:
+      capacity: ${MONIBANK_WRITE_LIMIT_CAPACITY:12}
+      refill-tokens: ${MONIBANK_WRITE_LIMIT_REFILL_TOKENS:12}
+      refill-period: ${MONIBANK_WRITE_LIMIT_REFILL_PERIOD:PT1H}
+
+  operations:
+    journal-directory: ${MONIBANK_OPERATION_JOURNAL_DIR:logs/operations}
+    retention-days: ${MONIBANK_OPERATION_RETENTION_DAYS:30}
+
+  mainframe:
+    provider: HERCULES
+    host: localhost
+    reader-port: 3505
+    console-port: 3270
+    http-host: ${MAINFRAME_HTTP_HOST:localhost}
+    http-port: 8038
+    job-user: ${MAINFRAME_JOB_USER}
+    job-password: ${MAINFRAME_JOB_PASSWORD}
+
+    log-host: 161.97.130.131
+    log-user: root
+    log-path: /root/mainframe/prt/prt00e.txt
