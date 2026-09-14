@@ -1,0 +1,64 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+monibank:
+  operations:
+    journal-directory: ${MONIBANK_OPERATION_JOURNAL_DIR:/app/data/operations}
+    retention-days: ${MONIBANK_OPERATION_RETENTION_DAYS:30}
+
+  daily-close:
+    enabled: ${MB_DAILY_CLOSE_ENABLED:false}
+    catch-up-on-startup: ${MB_DAILY_CLOSE_CATCH_UP:false}
+    cron: ${MB_DAILY_CLOSE_CRON:0 5 0 * * *}
+    zone: ${MB_DAILY_CLOSE_ZONE:Europe/Warsaw}
+    currency: ${MB_DAILY_CLOSE_CURRENCY:EUR}
+    interest-rate-basis-points: ${MB_INTEREST_RATE_BPS:500}
+    batch-timeout: ${MB_DAILY_CLOSE_BATCH_TIMEOUT:2m}
+
+  mainframe:
+    provider: HERCULES
+
+    host: ${MAINFRAME_HOST:monibank-mainframe}
+    reader-port: ${MAINFRAME_READER_PORT:3505}
+    console-port: ${MAINFRAME_CONSOLE_PORT:3270}
+
+    http-host: ${MAINFRAME_HTTP_HOST:monibank-mainframe}
+    http-port: ${MAINFRAME_HTTP_PORT:8038}
+
+    result-host: ${MAINFRAME_RESULT_HOST:monibank-mainframe}
+    result-port: ${MAINFRAME_RESULT_PORT:5001}
+
+    job-user: ${MAINFRAME_JOB_USER}
+    job-password: ${MAINFRAME_JOB_PASSWORD}
+
+    log-host: ${MAINFRAME_LOG_HOST:}
+    log-user: ${MAINFRAME_LOG_USER:root}
+    log-path: ${MAINFRAME_LOG_PATH:/mainframe-logs/hardcopy.log}
+
+    live-log-container: ${MAINFRAME_LIVE_LOG_CONTAINER:}
+    live-log-path: ${MAINFRAME_LIVE_LOG_PATH:/mainframe-logs/hardcopy.log}
+    result-spool-path: ${MAINFRAME_RESULT_SPOOL_PATH:/mainframe-logs/prt00e.txt}
+
+    metrics-refresh-ms: ${MAINFRAME_METRICS_REFRESH_MS:15000}
+
+    terminal:
+      enabled: ${MB_TERMINAL_ENABLED:false}
+      host: ${MB_TERMINAL_HOST:monibank-mainframe}
+      port: ${MB_TERMINAL_PORT:3270}
+      recovery-delay: ${MB_TERMINAL_RECOVERY_DELAY:2s}
+      pool-size: ${MB_TERMINAL_POOL_SIZE:2}
+
+      sessions:
+        - id: STEVE
+          emulator-control-port: ${MB_TERMINAL_1_CONTROL_PORT:13270}
+          username: ${MB_TSO_USERNAME_1}
+          password: ${MB_TSO_PASSWORD_1}
+          kicks-startup-command: ${MB_KICKS_STARTUP_COMMAND_1:EXEC 'HERC01.CMDPROC(MBKICKS)'}
+
+        - id: SOFIA
+          emulator-control-port: ${MB_TERMINAL_2_CONTROL_PORT:13272}
+          username: ${MB_TSO_USERNAME_2}
+          password: ${MB_TSO_PASSWORD_2}
+          kicks-startup-command: ${MB_KICKS_STARTUP_COMMAND_2:EXEC 'HERC01.CMDPROC(MBKICKS)'}
