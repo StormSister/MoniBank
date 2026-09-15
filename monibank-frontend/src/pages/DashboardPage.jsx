@@ -21,6 +21,7 @@ import StatCard from '../components/dashboard/StatCard.jsx'
 import Panel from '../components/ui/Panel.jsx'
 import StatusBadge from '../components/ui/StatusBadge.jsx'
 import Button from '../components/ui/Button.jsx'
+import DocumentationLink from '../components/ui/DocumentationLink.jsx'
 
 const money = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -65,9 +66,12 @@ export default function DashboardPage() {
             </p>
             <p className="mt-1 text-xs text-mb-muted sm:hidden">Business date: <span className="font-mono text-mb-gold-light">{formatReportDate(report?.businessDate)}</span></p>
           </div>
-          <StatusBadge variant={report?.state === 'CLOSED' ? 'success' : 'warning'}>
-            {report?.state || (reportQuery.isLoading ? 'LOADING' : 'UNAVAILABLE')}
-          </StatusBadge>
+          <div className="flex items-center gap-2">
+            <DocumentationLink page="previousDayClose" section="production" />
+            <StatusBadge variant={report?.state === 'CLOSED' ? 'success' : 'warning'}>
+              {report?.state || (reportQuery.isLoading ? 'LOADING' : 'UNAVAILABLE')}
+            </StatusBadge>
+          </div>
         </div>
 
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,210px),1fr))] gap-3 p-3">
@@ -78,7 +82,15 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <Panel title="Recent Transactions · Live" action={<button type="button" onClick={() => navigate('/statements')} className="text-xs text-mb-muted hover:text-mb-gold-light">Open statements</button>}>
+      <Panel
+        title="Recent Transactions · Live"
+        action={(
+          <div className="flex items-center gap-2">
+            <DocumentationLink page="recentTransactions" section="refresh" />
+            <button type="button" onClick={() => navigate('/statements')} className="text-xs text-mb-muted hover:text-mb-gold-light">Open statements</button>
+          </div>
+        )}
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-xs">
             <thead className="bg-white/[0.025] text-[10px] uppercase tracking-wide text-mb-muted"><tr>{['Date & time', 'Type', 'Account', 'Detail', 'Amount', 'Balance after', 'Status'].map((heading) => <th key={heading} className="px-4 py-3 font-medium">{heading}</th>)}</tr></thead>
@@ -109,7 +121,10 @@ export default function DashboardPage() {
         </div>
       </Panel>
 
-      <Panel title="Quick Actions">
+      <Panel
+        title="Quick Actions"
+        action={<DocumentationLink page="quickActions" section="routes">About these shortcuts</DocumentationLink>}
+      >
         <div className="grid grid-cols-2 gap-2.5 p-3 sm:grid-cols-3 sm:p-4 xl:grid-cols-6">
           {QUICK_ACTIONS.map((action) => (
             <QuickAction
@@ -154,6 +169,11 @@ function SystemOverview({
             <p className="mt-1 text-xs text-mb-muted">
               Legacy core system overview · detailed infrastructure health is available in System Status.
             </p>
+            <DocumentationLink
+              page="systemOverview"
+              section="refresh"
+              className="mt-2"
+            />
           </div>
         </div>
 

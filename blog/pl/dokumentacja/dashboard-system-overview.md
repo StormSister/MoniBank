@@ -33,7 +33,7 @@ Powitanie obliczam na podstawie `new Date().getHours()` w przeglądarce. Korzyst
 
 Otwarcie konsoli live zmienia stan Reacta w `AppLayout`. Sama konsola korzysta z osobnego połączenia SSE i nie jest częścią żadnej z dwóch odpowiedzi opisanych poniżej.
 
-## 3. Żądania HTTP
+## 3. Żądania HTTP {#requests}
 
 Dane dynamiczne pobierają dwa hooki TanStack Query:
 
@@ -78,7 +78,7 @@ Podsumowanie operacji czyta dziennik Javy. Nie uruchamia `LISTTXN`, nie przeglą
 
 Reader jest sprawdzany najwyżej raz na minutę, mimo że cały snapshot jest zwykle odświeżany co 15 sekund. Dzięki temu dashboard nie otwiera czterech połączeń z readerem na minutę tylko po to, żeby odmalować status.
 
-## 7. Znaczenie statusów i odświeżania
+## 7. Znaczenie statusów i odświeżania {#refresh}
 
 Backend zwraca:
 
@@ -102,4 +102,3 @@ Podobnie `CONNECTED` przy drukarce potwierdza aktywne połączenie transportowe.
 ## Czym ten panel jest — a czym nie jest
 
 Zaprojektowałam go jako skrót stanu infrastruktury, a nie księgę bankową. Liczba klientów, salda, transakcje i podsumowanie poprzedniego dnia mają inne ścieżki danych i opiszę je osobno. To rozdzielenie pozwala jednoznacznie wskazać, czy liczba pochodzi z VSAM-u, trwałego raportu dziennego, rekordu MBR czy wyłącznie z telemetrii Javy.
-

@@ -33,7 +33,7 @@ The greeting is calculated from `new Date().getHours()` in the browser. It is th
 
 Opening the live console changes React state in `AppLayout`. The console itself uses a separate SSE connection and is not part of either status response described below.
 
-## 3. HTTP requests
+## 3. HTTP requests {#requests}
 
 Two TanStack Query hooks supply the dynamic values:
 
@@ -78,7 +78,7 @@ The operation summary reads the Java operation journal. It does not issue `LISTT
 
 The reader is checked at most once per minute even though the full snapshot is normally refreshed every 15 seconds. This avoids opening a new reader connection four times per minute just to repaint the dashboard.
 
-## 7. Status and refresh semantics
+## 7. Status and refresh semantics {#refresh}
 
 The backend reports:
 
@@ -102,4 +102,3 @@ Similarly, `CONNECTED` for the result printer confirms an active transport conne
 ## What this panel is — and is not
 
 I designed this panel as an infrastructure summary, not as a banking ledger. Customer counts, balances, transactions and the previous-day close have different data paths and will be documented separately. Keeping those paths separate makes it possible to explain whether a number originates in VSAM, a durable daily report, an MBR result or Java-only telemetry.
-
