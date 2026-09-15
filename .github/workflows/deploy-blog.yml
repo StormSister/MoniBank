@@ -1,0 +1,78 @@
+name: Deploy engineering blog
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "blog/**"
+      - ".github/workflows/deploy-blog.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monibank-blog-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy blog
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: blog/package-lock.json
+
+      - name: Install dependencies
+        working-directory: blog
+        run: npm ci
+
+      - name: Build VitePress blog
+        working-directory: blog
+        run: npm run docs:build
+
+      - name: Configure deployment key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.MONIBANK_DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.MONIBANK_DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
+
+      - name: Upload and activate release
+        env:
+          DEPLOY_HOST: ${{ secrets.MONIBANK_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.MONIBANK_DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+
+          release_id="${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          release_dir="/srv/monibank/blog/releases/${release_id}"
+          ssh_target="${DEPLOY_USER}@${DEPLOY_HOST}"
+
+          ssh "$ssh_target" "install -d -m 755 '${release_dir}'"
+          rsync -az --delete \
+            blog/.vitepress/dist/ \
+            "${ssh_target}:${release_dir}/"
+          ssh "$ssh_target" \
+            "test -f '${release_dir}/index.html' && ln -sfn '${release_dir}' /srv/monibank/blog/current"
+
+      - name: Verify published blog
+        run: |
+          curl --fail --silent --show-error \
+            --retry 5 \
+            --retry-delay 2 \
+            https://monibank.stormsister.eu/blog/ \
+            > /dev/null

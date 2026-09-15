@@ -10,13 +10,13 @@ hero:
       text: Poznaj projekt
       link: /pl/#projekt
     - theme: alt
-      text: Status prac
-      link: /pl/#rozwoj
+      text: Czytaj dokumentację
+      link: /pl/dokumentacja/
 
 features:
   - icon: 'MVS'
     title: Legacy Bank
-    details: IN DEVELOPMENT · Środowisko bankowe budowane na MVS 3.8J, Herculesie, KICKS, COBOL-u, VSAM-ie i JES-ie.
+    details: RUNNING DEMO · Środowisko bankowe zbudowane na MVS 3.8J, Herculesie, KICKS, COBOL-u, VSAM-ie i JES-ie.
     link: /pl/legacy/
   - icon: 'IBM Z'
     title: Modern Bank
@@ -55,7 +55,7 @@ Modern Bank jest planowany jako przyszła implementacja na IBM Z. Pozwoli porów
 - transport wyników przez wirtualną drukarkę JES
 - API Java/Spring i panel operatora w Vite
 
-Pierwszy pełny przepływ online, **GET CUSTOMER**, działa end to end. Szersza aplikacja bankowa nadal jest rozwijana.
+Legacy core obsługuje obecnie klientów, konta, karty, operacje kasowe, wyciągi i zamknięcie dnia. Dwa stałe workery terminalowe wykonują żądania online przez KICKS.
 [Zobacz architekturę Legacy Banku →](/pl/legacy/)
 </article>
 
@@ -70,7 +70,7 @@ Pierwszy pełny przepływ online, **GET CUSTOMER**, działa end to end. Szersza 
 - odpowiadające sobie przypadki użycia bankowego
 - bezpośrednie porównanie z Legacy Bankiem
 
-Architekturę doprecyzujemy, gdy fundament Legacy Banku będzie wystarczająco kompletny.
+Architekturę doprecyzuję, gdy fundament Legacy Banku będzie wystarczająco kompletny.
 </article>
 
 </section>
@@ -79,16 +79,18 @@ Architekturę doprecyzujemy, gdy fundament Legacy Banku będzie wystarczająco k
 
 ## Aktualny status prac
 
-MoniBank jest aktywnie rozwijanym projektem portfolio i nauki. Ukończone przepływy pokazujemy na prawdziwym kodzie i logach, a niedokończone elementy wyraźnie oznaczamy.
+MoniBank jest aktywnie rozwijanym projektem portfolio i nauki. Ukończone przepływy pokazuję na prawdziwym kodzie i logach, a niedokończone elementy wyraźnie oznaczam.
 
 | Obszar | Status | Obecny zakres |
 |---|---|---|
-| Środowisko legacy | In development | MVS 3.8J uruchomiony pod Herculesem |
-| Integracja Java | In development | Spring Boot, stały worker terminalowy i listener TCP |
+| Środowisko legacy | Running demo | MVS 3.8J, Hercules i KICKS wdrożone na VPS |
+| Integracja Java | Working | Spring Boot, wspólna kolejka, dwa stałe workery terminalowe i listener TCP |
 | GET CUSTOMER | Working end to end | JSON → 3270/KICKS → COBOL/VSAM → JES → JSON |
-| Operacje bankowe | In development | klienci, konta, karty, wpłaty, wypłaty i wyciągi |
-| Panel operatora | In development | dashboard Vite i podgląd pracy mainframe’u |
-| Pierwszy artykuł techniczny | Weryfikowany | dzisiaj sprawdzamy go z ukończonym endpointem |
+| Operacje bankowe | Working | klienci, konta, karty, wpłaty, wypłaty i wyciągi |
+| Zamknięcie dnia | Working | naliczanie odsetek, trwały raport dzienny i dane poprzedniego dnia na dashboardzie |
+| Panel operatora | Working | dashboard React, dziennik operacji, status systemu i logi mainframe live |
+| Security i deployment | Working | JWT dla admina, rate limiting, Docker, GHCR, GitHub Actions i Nginx |
+| Treści techniczne | W trakcie | dwa dłuższe artykuły i dwujęzyczna dokumentacja procesów |
 | Modern Bank | Planned | przyszła gałąź IBM Z |
 
 </section>
@@ -101,7 +103,7 @@ MoniBank jest aktywnie rozwijanym projektem portfolio i nauki. Ukończone przep�
 2. **Żeby pokazać granicę pomiędzy pokoleniami technologii**, również z niewygodnymi detalami, które często znikają z eleganckich diagramów.
 3. **Żeby stworzyć uczciwe portfolio techniczne**, w którym decyzje, awarie i poprawki można prześledzić w kodzie, artykułach i filmie.
 
-Pierwszy artykuł techniczny przeprowadzi czytelnika przez jeden prawdziwy request GET CUSTOMER: od Postmana do MVS i z powrotem. Przed publikacją sprawdzimy każdą pokazaną klasę, program, strukturę rekordu i linię logu z działającą implementacją.
+Artykuły techniczne i dokumentacja procesów prowadzą przez prawdziwe żądania od panelu operatora do MVS i z powrotem. Przed publikacją sprawdzam każdą opisaną klasę, program, strukturę rekordu i drogę wyniku z kodem w repozytorium.
 
 </section>
 
