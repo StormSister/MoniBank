@@ -10,13 +10,13 @@ hero:
       text: Explore the project
       link: /#project
     - theme: alt
-      text: Development status
-      link: /#development
+      text: Read the documentation
+      link: /documentation/
 
 features:
   - icon: 'MVS'
     title: Legacy Bank
-    details: IN DEVELOPMENT · A banking environment built on MVS 3.8J, Hercules, KICKS, COBOL, VSAM and JES.
+    details: RUNNING DEMO · A banking environment built on MVS 3.8J, Hercules, KICKS, COBOL, VSAM and JES.
     link: /legacy/
   - icon: 'IBM Z'
     title: Modern Bank
@@ -55,7 +55,7 @@ Modern Bank is planned as a future implementation for IBM Z. It will allow the c
 - JES virtual-printer result transport
 - Java/Spring API and Vite operator panel
 
-The first complete online flow, **GET CUSTOMER**, works end to end. The wider banking application is still being built.
+The legacy core now supports customer, account, card, cash transaction, statement and end-of-day flows. Two persistent terminal workers execute online requests through KICKS.
 
 [Explore the Legacy Bank architecture →](/legacy/)
 
@@ -85,12 +85,14 @@ MoniBank is an active portfolio and learning project. Completed flows are demons
 
 | Area | Status | Current scope |
 |---|---|---|
-| Legacy environment | In development | MVS 3.8J running under Hercules |
-| Java integration | In development | Spring Boot, persistent terminal worker and TCP listener |
+| Legacy environment | Running demo | MVS 3.8J, Hercules and KICKS deployed on the VPS |
+| Java integration | Working | Spring Boot, shared request queue, two persistent terminal workers and TCP listener |
 | GET CUSTOMER | Working end to end | JSON → 3270/KICKS → COBOL/VSAM → JES → JSON |
-| Banking operations | In development | customers, accounts, cards, deposits, withdrawals and statements |
-| Operator interface | In development | Vite dashboard and live mainframe visibility |
-| First technical article | Under review | being verified today against the completed endpoint |
+| Banking operations | Working | customers, accounts, cards, deposits, withdrawals and statements |
+| End-of-day processing | Working | interest posting, durable daily report and previous-day dashboard summary |
+| Operator interface | Working | React dashboard, operation journal, system status and live mainframe stream |
+| Security and delivery | Working | JWT admin API, rate limits, Docker, GHCR, GitHub Actions and Nginx |
+| Technical content | In progress | two long-form articles and a bilingual process documentation section |
 | Modern Bank | Planned | future IBM Z branch |
 
 </section>
@@ -103,7 +105,7 @@ MoniBank is an active portfolio and learning project. Completed flows are demons
 2. **Show the boundary between generations of technology**, including the awkward details polished diagrams often omit.
 3. **Build a transparent technical portfolio**, where decisions, failures and fixes can be examined in code, articles and video.
 
-The first technical article follows one real GET CUSTOMER request from Postman to MVS and back. Every class, program, record layout and log will be checked against the working implementation before publication.
+The technical articles and process documentation follow real requests from the operator interface to MVS and back. I verify every described class, program, record layout and result path against the repository before publication.
 
 </section>
 

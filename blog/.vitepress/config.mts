@@ -47,6 +47,7 @@ locales: {
         nav: [
           { text: 'Home', link: '/' },
           { text: 'Project', link: '/#project' },
+          { text: 'Documentation', link: '/documentation/' },
           {
   text: 'Articles',
   items: [
@@ -57,11 +58,26 @@ locales: {
     {
       text: 'JCL and COBOL automation',
       link: '/articles/jcl-cobol-automation'
+    },
+    {
+      text: 'Three terminals, two workers',
+      link: '/articles/terminal-workers'
     }
   ]
 },
           { text: 'Development', link: '/#development' }
         ],
+        sidebar: {
+          '/documentation/': [
+            {
+              text: 'MoniBank documentation',
+              items: [
+                { text: 'Documentation map', link: '/documentation/' },
+                { text: 'Dashboard system overview', link: '/documentation/dashboard-system-overview' }
+              ]
+            }
+          ]
+        },
         outline: { level: [2, 3], label: 'On this page' },
         docFooter: { prev: 'Previous page', next: 'Next page' },
         lastUpdated: { text: 'Last updated' },
@@ -81,6 +97,7 @@ locales: {
         nav: [
           { text: 'Start', link: '/pl/' },
           { text: 'Projekt', link: '/pl/#projekt' },
+          { text: 'Dokumentacja', link: '/pl/dokumentacja/' },
           {
   text: 'Artykuły',
   items: [
@@ -91,11 +108,26 @@ locales: {
     {
       text: 'Automatyzacja JCL i COBOL',
       link: '/pl/articles/jcl-cobol-automation'
+    },
+    {
+      text: 'Trzy terminale, dwa workery',
+      link: '/pl/articles/terminal-workers'
     }
   ]
 },
           { text: 'Rozwój', link: '/pl/#rozwoj' }
         ],
+        sidebar: {
+          '/pl/dokumentacja/': [
+            {
+              text: 'Dokumentacja MoniBanku',
+              items: [
+                { text: 'Mapa dokumentacji', link: '/pl/dokumentacja/' },
+                { text: 'Górny panel dashboardu', link: '/pl/dokumentacja/dashboard-system-overview' }
+              ]
+            }
+          ]
+        },
         outline: { level: [2, 3], label: 'Na tej stronie' },
         docFooter: { prev: 'Poprzednia strona', next: 'Następna strona' },
         lastUpdated: { text: 'Ostatnia aktualizacja' },

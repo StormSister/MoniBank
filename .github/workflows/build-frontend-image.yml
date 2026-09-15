@@ -1,0 +1,48 @@
+name: Build frontend image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "monibank-frontend/**"
+      - ".github/workflows/build-frontend-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: monibank-frontend-image
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./monibank-frontend
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ghcr.io/stormsister/monibank-frontend:latest
+            ghcr.io/stormsister/monibank-frontend:sha-${{ github.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
