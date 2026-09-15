@@ -15,34 +15,27 @@ export default defineConfig({
   ],
   lastUpdated: true,
   appearance: 'dark',
-    head: [
-    ['link', {
-      rel: 'icon',
-      type: 'image/png',
-      href: '/blog/favicon.png'
-    }],
-    ['link', {
-      rel: 'apple-touch-icon',
-      href: '/blog/apple-touch-icon.png'
-    }],
-    ['meta', {
-      name: 'theme-color',
-      content: '#07131d'
-    }],
-    ['meta', {
-      property: 'og:type',
-      content: 'website'
-    }],
-    ['meta', {
-      property: 'og:site_name',
-      content: 'MoniBank Engineering'
-    }],
-    ['script', {
-      type: 'module',
-      src: 'https://static.cloudflareinsights.com/beacon.min.js',
-      'data-cf-beacon': '{"token":"0e80c27d25fa41c4926dedb8797a6673"}'
-    }]
-  ],
+  head: [
+  ['link', {
+    rel: 'icon',
+    type: 'image/png',
+    href: '/blog/favicon.png'
+  }],
+  ['link', {
+    rel: 'apple-touch-icon',
+    href: '/blog/apple-touch-icon.png'
+  }],
+  ['meta', { name: 'theme-color', content: '#07131d' }],
+  ['meta', { name: 'theme-color', content: '#07131d' }],
+  ['meta', { property: 'og:type', content: 'website' }],
+  ['meta', { property: 'og:site_name', content: 'MoniBank Engineering' }],
+  ['script', {
+    type: 'module',
+    src: 'https://static.cloudflareinsights.com/beacon.min.js',
+    'data-cf-beacon': '{"token":"0e80c27d25fa41c4926dedb8797a6673"}'
+  }]
+
+],
   markdown: {
   lineNumbers: true,
   config(md) {
@@ -85,7 +78,14 @@ locales: {
               text: 'MoniBank documentation',
               items: [
                 { text: 'Documentation map', link: '/documentation/' },
-                { text: 'Dashboard system overview', link: '/documentation/dashboard-system-overview' }
+                { text: 'Dashboard system overview', link: '/documentation/dashboard-system-overview' },
+                { text: 'Previous-day close summary', link: '/documentation/previous-day-close-summary' },
+                { text: 'Recent transactions', link: '/documentation/recent-transactions' },
+                { text: 'Dashboard quick actions', link: '/documentation/quick-actions' },
+                { text: 'MBGATE gateway', link: '/documentation/mbgate' },
+                { text: 'MBRESULT result channel', link: '/documentation/mbresult' },
+                { text: 'Installing on MVS', link: '/documentation/mvs-installation' },
+                { text: 'Add customer flow', link: '/documentation/add-customer' }
               ]
             }
           ]
@@ -135,7 +135,14 @@ locales: {
               text: 'Dokumentacja MoniBanku',
               items: [
                 { text: 'Mapa dokumentacji', link: '/pl/dokumentacja/' },
-                { text: 'Górny panel dashboardu', link: '/pl/dokumentacja/dashboard-system-overview' }
+                { text: 'Górny panel dashboardu', link: '/pl/dokumentacja/dashboard-system-overview' },
+                { text: 'Podsumowanie poprzedniego dnia', link: '/pl/dokumentacja/podsumowanie-poprzedniego-dnia' },
+                { text: 'Ostatnie transakcje', link: '/pl/dokumentacja/ostatnie-transakcje' },
+                { text: 'Szybkie akcje dashboardu', link: '/pl/dokumentacja/szybkie-akcje' },
+                { text: 'Bramka MBGATE', link: '/pl/dokumentacja/mbgate' },
+                { text: 'Kanał wynikowy MBRESULT', link: '/pl/dokumentacja/mbresult' },
+                { text: 'Instalacja na MVS', link: '/pl/dokumentacja/instalacja-mvs' },
+                { text: 'Proces dodawania klienta', link: '/pl/dokumentacja/dodaj-klienta' }
               ]
             }
           ]

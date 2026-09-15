@@ -30,20 +30,43 @@ This prevents a UI label from being documented as if it were a mainframe fact wh
 |---|---|---|
 | Application map | Complete request and result paths | Planned |
 | Dashboard provenance | Status, operations, previous-day report and recent transactions | In progress |
-| Gateway protocol | `MBGW`, `MBGATE`, 855-byte COMMAREA and operation dispatch | Planned |
-| Result protocol | `MBR;D`, `MBR;S`, `MBR;E`, `MBRESULT` and physical printer frames | Planned |
+| Gateway protocol | `MBGW`, `MBGATE`, 855-byte COMMAREA and operation dispatch | Available |
+| Result protocol | `MBR;D`, `MBR;S`, `MBR;E`, `MBRESULT` and physical printer frames | Available |
 | Java listener | TCP connection, frame assembly, request correlation and timeout behaviour | Planned |
-| Business workflows | Add customer, accounts, cards, deposits, withdrawals and statements | Planned |
+| Business workflows | Add customer, accounts, cards, deposits, withdrawals and statements | In progress |
 | Daily close | `POSTINT`, `DAYSTAT`, `GETSTAT` and `MBANK.DAYRPT` | Planned |
 | Runtime | STEVE, SOFIA, shared queue, recovery and VSAM coordination | Planned |
-| Mainframe delivery | COBOL sources, copybooks, CLISTs and ordered JCL jobs | Planned |
+| Mainframe delivery | COBOL sources, copybooks, CLISTs and ordered JCL jobs | Available |
 | Repository map | Active, supporting and currently unused code | Planned |
 
 ## Available now
 
 - [Dashboard system overview: where the top-panel data comes from](./dashboard-system-overview)
+- [Previous-day close summary: how MVS produces and serves the report](./previous-day-close-summary)
+- [Recent transactions: why the five-row panel reads the complete VSAM result](./recent-transactions)
+- [Dashboard quick actions: routes first, business operation after submission](./quick-actions)
+- [MBGATE: the common KICKS gateway and operation router](./mbgate)
+- [MBRESULT: the class-Z printer result channel](./mbresult)
+- [Installing on MVS: maps, copybooks, KICKS tables and MBKICKS](./mvs-installation)
+- [Add customer: from the operator form to a VSAM record](./add-customer)
+
+## Stable links for the application {#frontend-links}
+
+Frontend links should target the page routes below. These slugs are treated as a public contract and should not be renamed without updating the application.
+
+| Feature key | English path | Polish path |
+| --- | --- | --- |
+| `system-overview` | `/blog/documentation/dashboard-system-overview` | `/blog/pl/dokumentacja/dashboard-system-overview` |
+| `previous-day-close` | `/blog/documentation/previous-day-close-summary` | `/blog/pl/dokumentacja/podsumowanie-poprzedniego-dnia` |
+| `recent-transactions` | `/blog/documentation/recent-transactions` | `/blog/pl/dokumentacja/ostatnie-transakcje` |
+| `quick-actions` | `/blog/documentation/quick-actions` | `/blog/pl/dokumentacja/szybkie-akcje` |
+| `mbgate` | `/blog/documentation/mbgate` | `/blog/pl/dokumentacja/mbgate` |
+| `mbresult` | `/blog/documentation/mbresult` | `/blog/pl/dokumentacja/mbresult` |
+| `mvs-installation` | `/blog/documentation/mvs-installation` | `/blog/pl/dokumentacja/instalacja-mvs` |
+| `add-customer` | `/blog/documentation/add-customer` | `/blog/pl/dokumentacja/dodaj-klienta` |
+
+Use explicit custom anchors such as `#refresh` only where a link must open one exact section. Avoid linking to automatically generated localized heading IDs.
 
 ## Source of truth
 
 Each page links to the relevant files in the [MoniBank repository](https://github.com/StormSister/MoniBank). Runtime screenshots and logs may demonstrate that a path worked at a particular time, but they do not replace the implementation as evidence of repeatable behaviour.
-
