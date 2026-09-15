@@ -15,22 +15,34 @@ export default defineConfig({
   ],
   lastUpdated: true,
   appearance: 'dark',
-  head: [
-  ['link', {
-    rel: 'icon',
-    type: 'image/png',
-    href: '/blog/favicon.png'
-  }],
-  ['link', {
-    rel: 'apple-touch-icon',
-    href: '/blog/apple-touch-icon.png'
-  }],
-  ['meta', { name: 'theme-color', content: '#07131d' }],
-  ['meta', { name: 'theme-color', content: '#07131d' }],
-  ['meta', { property: 'og:type', content: 'website' }],
-  ['meta', { property: 'og:site_name', content: 'MoniBank Engineering' }]
-
-],
+    head: [
+    ['link', {
+      rel: 'icon',
+      type: 'image/png',
+      href: '/blog/favicon.png'
+    }],
+    ['link', {
+      rel: 'apple-touch-icon',
+      href: '/blog/apple-touch-icon.png'
+    }],
+    ['meta', {
+      name: 'theme-color',
+      content: '#07131d'
+    }],
+    ['meta', {
+      property: 'og:type',
+      content: 'website'
+    }],
+    ['meta', {
+      property: 'og:site_name',
+      content: 'MoniBank Engineering'
+    }],
+    ['script', {
+      type: 'module',
+      src: 'https://static.cloudflareinsights.com/beacon.min.js',
+      'data-cf-beacon': '{"token":"0e80c27d25fa41c4926dedb8797a6673"}'
+    }]
+  ],
   markdown: {
   lineNumbers: true,
   config(md) {
