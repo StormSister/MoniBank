@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronsLeftRight, Maximize2, Minimize2, Minus, Trash2, X } from 'lucide-react'
 import { MAX_LOG_LINES, useMainframeLiveLog } from '../../hooks/useMainframeLiveLog.js'
+import DocumentationLink from '../ui/DocumentationLink.jsx'
 
 const WIDTH_STORAGE_KEY = 'monibank.live-console.width.v4'
 const DEFAULT_WIDTH = 520
@@ -146,6 +147,7 @@ export default function LiveConsole({ open, onClose }) {
           </div>
 
           <div className="flex shrink-0 items-center gap-0.5 text-mb-muted">
+            <DocumentationLink page="liveConsole">How it works</DocumentationLink>
             <HeaderButton label="Minimize" onClick={close}><Minus size={16} /></HeaderButton>
             <HeaderButton label={fullscreen ? 'Restore panel' : 'Full screen'} onClick={() => setFullscreen((current) => !current)}>
               {fullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}

@@ -57,6 +57,16 @@ export const DOCUMENTATION_LINKS = Object.freeze({
     en: '/documentation/add-customer',
     pl: '/pl/dokumentacja/dodaj-klienta',
   },
+  liveConsole: {
+    en: '/documentation/live-mainframe-console',
+    pl: '/pl/dokumentacja/konsola-mainframe-live',
+    sections: {
+      sources: 'sources',
+      reconnection: 'reconnection',
+      activity: 'activity',
+      security: 'security',
+    },
+  },
 })
 
 export function documentationUrl(pageKey, options = {}) {
