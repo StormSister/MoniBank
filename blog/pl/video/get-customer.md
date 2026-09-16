@@ -9,7 +9,7 @@ outline: deep
 **Długość:** 6–8 minut  
 **Format:** nagranie ekranu + narracja + animowany diagram  
 **Odbiorcy:** Java developerzy, początkujący mainframowcy oraz doświadczeni programiści COBOL/CICS  
-**Obietnica:** pokazujemy jeden kompletny, prawdziwy request — nie sam slajd architektoniczny.
+**Obietnica:** pokazuję jeden kompletny, prawdziwy request — nie sam slajd architektoniczny.
 
 ## Zasada redakcyjna
 
@@ -20,24 +20,24 @@ Główną historią jest poprawne wywołanie `GETCUST`. Błąd długości spool 
 ### Obraz
 
 1. Bliskie ujęcie Postmana.
-2. Pokazujemy endpoint i body:
+2. Pokazuję endpoint i body:
 
 ```json
 { "customerId": "C000000000006" }
 ```
 
-3. Klikamy **Send**.
-4. Natychmiast pokazujemy czysty JSON `CustomerResponse`.
+3. Klikam **Send**.
+4. Natychmiast pokazuję czysty JSON `CustomerResponse`.
 
 ### Narracja
 
-> „To wygląda jak zupełnie zwykłe API. Wysyłamy identyfikator klienta jako JSON i otrzymujemy dane klienta jako JSON — tak jak w milionach requestów wykonywanych każdego dnia. Ale ten klient nie został odczytany z chmurowej bazy. Java sterowała terminalem 3270, uruchomiła transakcję KICKS na MVS 3.8J, COBOL odczytał VSAM, a JES zwrócił wynik przez wirtualną drukarkę. Prześledźmy ten request bajt po bajcie.”
+> „To wygląda jak zupełnie zwykłe API. Wysyłam identyfikator klienta jako JSON i otrzymuję dane klienta jako JSON — tak jak w milionach requestów wykonywanych każdego dnia. Ale ten klient nie został odczytany z chmurowej bazy. Java sterowała terminalem 3270, uruchomiła transakcję KICKS na MVS 3.8J, COBOL odczytał VSAM, a JES zwrócił wynik przez wirtualną drukarkę. Prześledzę ten request bajt po bajcie.”
 
 ### Tytuł
 
 **JSON → 3270 → COBOL → VSAM → JES → JSON**
 
-W narracji używamy sformułowania „linia MVS wywodząca się z końca lat siedemdziesiątych”. Nie nazywamy MVS 3.8J dosłownie systemem wydanym w 1978 roku.
+W narracji używam sformułowania „linia MVS wywodząca się z końca lat siedemdziesiątych”. Nie nazywam MVS 3.8J dosłownie systemem wydanym w 1978 roku.
 
 ## Akt 1: zwyczajna granica API — 0:25–1:05
 
@@ -49,7 +49,7 @@ W narracji używamy sformułowania „linia MVS wywodząca się z końca lat sie
 
 ### Narracja
 
-> „Granica HTTP jest celowo nudna. Spring sprawdza, czy ID zaczyna się od litery C i zawiera dwanaście cyfr. Błędne dane zostają odrzucone, zanim zajmiemy sesję terminalową. Kontroler przekazuje request do `CustomerService`, który wybiera operację online `GETCUST`.”
+> „Granica HTTP jest celowo nudna. Spring sprawdza, czy ID zaczyna się od litery C i zawiera dwanaście cyfr. Błędne dane zostają odrzucone, zanim zajmę sesję terminalową. Kontroler przekazuje request do `CustomerService`, który wybiera operację online `GETCUST`.”
 
 ### Kod
 
@@ -92,7 +92,7 @@ EXEC 'HERC01.CMDPROC(MBKICKS)'
 
 > „Manager jest właścicielem kolejki i terminala. Kontroler ani serwis domenowy nie wpisują bezpośrednio komend 3270.”
 
-Podczas nagrania nie otwieramy drugiej interaktywnej sesji `HERC01`, ponieważ grozi to `IKJ56425I USERID IN USE`.
+Podczas nagrania nie otwieram drugiej interaktywnej sesji `HERC01`, ponieważ grozi to `IKJ56425I USERID IN USE`.
 
 ## Akt 3: najpierw rejestracja, potem wysłanie — 1:40–2:15
 
@@ -118,7 +118,7 @@ Executing MBGW operation GETCUST [Rxxxxxxx]
 
 ### Obraz
 
-Najlepiej pokazać bezpieczny capture MBGW przed Enterem i po zakończeniu. Jeżeli nie da się bezpiecznie mirrorować ekranu, używamy zanonimizowanego dumpu lub diagramu pól.
+Najlepiej pokazać bezpieczny capture MBGW przed Enterem i po zakończeniu. Jeżeli nie da się bezpiecznie mirrorować ekranu, używam zanonimizowanego dumpu lub diagramu pól.
 
 ```text
 OPERATION    GETCUST
@@ -180,9 +180,9 @@ RESP=22  RESP2=27
 
 ### Narracja
 
-> „Wspólny program `MBRESULT` odpowiada za wysłanie wyniku do spool. Pierwsza wersja próbowała zapisać logiczny rekord 160-znakowy jednym `SPOOLWRITE`. Java dostała timeout, ale był to tylko skutek. Po dodaniu diagnostyki KICKS zwrócił RESP 22 i RESP2 27: linia była o 27 znaków za długa. Online spool przyjmował 133, a nasz protokół wymagał 160.”
+> „Wspólny program `MBRESULT` odpowiada za wysłanie wyniku do spool. Pierwsza wersja próbowała zapisać logiczny rekord 160-znakowy jednym `SPOOLWRITE`. Java dostała timeout, ale był to tylko skutek. Po dodaniu diagnostyki KICKS zwrócił RESP 22 i RESP2 27: linia była o 27 znaków za długa. Online spool przyjmował 133, a protokół MoniBanku wymagał 160.”
 
-> „Nie skróciliśmy protokołu, ponieważ batch już używał rekordów 160-bajtowych. Zmieniliśmy wyłącznie transport.”
+> „Nie skróciłam protokołu, ponieważ batch już używał rekordów 160-bajtowych. Zmieniłam wyłącznie transport.”
 
 ## Akt 8: dwie ramki fizyczne — 4:55–5:25
 
@@ -237,7 +237,7 @@ MAINFRAME RESULT << [MBR;S;GETCUST;Rxxxxxxx;...;OK]
 TCP SUCCESS - received 2 record(s)
 ```
 
-Jeśli log zawiera national ID, zamazujemy je.
+Jeśli log zawiera national ID, zamazuję je.
 
 ## Akt 11: rekord fixed-width staje się obiektem — 6:35–7:05
 
@@ -269,7 +269,7 @@ A C000000000006 PL *********** MONIKA ... TESTOWA ...
 
 > „Na zewnątrz MoniBank jest zwyczajnym API JSON. Wewnątrz każda warstwa zachowuje swoje mocne strony: Spring orkiestruje, 3270 wysyła polecenie, KICKS kieruje transakcją, COBOL czyta VSAM, JES transportuje, a Java koreluje i parsuje.”
 
-> „Nie ukryliśmy mainframe’u, udając, że jest bazą danych. Zbudowaliśmy protokół zgodny z tym, jak naprawdę działa.”
+> „Nie ukryłam mainframe’u, udając, że jest bazą danych. Zbudowałam protokół zgodny z tym, jak naprawdę działa.”
 
 ### Plansza końcowa
 
@@ -284,7 +284,7 @@ A C000000000006 PL *********** MONIKA ... TESTOWA ...
 „Spring tworzy request ID, steruje KICKS, a COBOL czyta kluczowy, 119-bajtowy rekord VSAM.”
 
 **0:20–0:36** — `RESP=22, RESP2=27` i animacja podziału.  
-„Pierwszy zapis spool zawiódł, bo 160 znaków było o 27 za dużo. Zachowaliśmy protokół logiczny i podzieliliśmy każdy rekord na dwie ramki.”
+„Pierwszy zapis spool zawiódł, bo 160 znaków było o 27 za dużo. Zachowałam protokół logiczny i podzieliłam każdy rekord na dwie ramki.”
 
 **0:36–0:50** — Logi listenera.  
 „JES wysyła ramki przez wirtualną drukarkę klasy Z. Java odtwarza 160 znaków, grupuje po request ID i czeka na końcowy S albo E.”
@@ -297,7 +297,7 @@ A C000000000006 PL *********** MONIKA ... TESTOWA ...
 1. **To API JSON działa przez terminal 3270 i mainframe**
 2. **Spring Boot spotyka MVS: jeden request od początku do końca**
 3. **Od Postmana do COBOL-a i z powrotem — przez JES**
-4. **Zbudowaliśmy REST API dla MVS 3.8J**
+4. **Zbudowałam REST API dla MVS 3.8J**
 
 ## Materiały do nagrania
 

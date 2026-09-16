@@ -52,7 +52,7 @@ Dzięki temu nie opisuję etykiety z interfejsu jako „danej z mainframe’u”
 
 ## Stabilne linki dla aplikacji {#frontend-links}
 
-Linki z frontendu powinny prowadzić do poniższych tras stron. Te slugi traktujemy jak publiczny kontrakt i nie zmieniamy ich bez równoczesnej aktualizacji aplikacji.
+Linki z frontendu powinny prowadzić do poniższych tras stron. Te slugi traktuję jak publiczny kontrakt i nie zmieniam ich bez równoczesnej aktualizacji aplikacji.
 
 | Klucz funkcji | Ścieżka polska | Ścieżka angielska |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ Linki z frontendu powinny prowadzić do poniższych tras stron. Te slugi traktuj
 | `mvs-installation` | `/blog/pl/dokumentacja/instalacja-mvs` | `/blog/documentation/mvs-installation` |
 | `add-customer` | `/blog/pl/dokumentacja/dodaj-klienta` | `/blog/documentation/add-customer` |
 
-Jawnych kotwic, takich jak `#refresh`, używamy tylko wtedy, gdy link ma otworzyć konkretną sekcję. Nie linkujemy automatycznie generowanych, zależnych od języka identyfikatorów nagłówków.
+Jawnych kotwic, takich jak `#refresh`, używam tylko wtedy, gdy link ma otworzyć konkretną sekcję. Nie linkuję automatycznie generowanych, zależnych od języka identyfikatorów nagłówków.
 
 ## Źródło prawdy
 

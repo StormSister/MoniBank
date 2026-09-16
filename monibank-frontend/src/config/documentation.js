@@ -3,6 +3,10 @@ const DOCUMENTATION_BASE_URL = (
 ).replace(/\/+$/, '')
 
 export const DOCUMENTATION_LINKS = Object.freeze({
+  documentationHome: {
+    en: '/documentation/',
+    pl: '/pl/dokumentacja/',
+  },
   systemOverview: {
     en: '/documentation/dashboard-system-overview',
     pl: '/pl/dokumentacja/dashboard-system-overview',
@@ -78,4 +82,3 @@ export function documentationUrl(pageKey, options = {}) {
 
   return `${DOCUMENTATION_BASE_URL}${path}${anchor ? `#${anchor}` : ''}`
 }
-

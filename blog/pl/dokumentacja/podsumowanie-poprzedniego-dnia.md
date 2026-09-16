@@ -29,7 +29,7 @@ Panel pokazuje stan raportu, datę biznesową oraz cztery kafelki:
 | Wypłaty gotówkowe w ciągu dnia | suma zakończonych wypłat | liczba wypłat |
 | Aktywni klienci przy zamknięciu | klienci ze statusem `A` zapisanym w VSAM | klienci utworzeni w dacie biznesowej |
 
-Badge pokazuje `CLOSED` wyłącznie po poprawnym sparsowaniu raportu. Podczas pobierania widzimy `LOADING`, a po błędzie — `UNAVAILABLE`.
+Badge pokazuje `CLOSED` wyłącznie po poprawnym sparsowaniu raportu. Podczas pobierania widzę `LOADING`, a po błędzie — `UNAVAILABLE`.
 
 ## 2. Frontend i wybór daty
 

@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom'
 import {
-  Activity, BadgeDollarSign, BarChart3, BriefcaseBusiness, CreditCard,
-  Gauge, GraduationCap, Landmark, ReceiptText, ServerCog, Users, X,
+  Activity, BadgeDollarSign, BarChart3, BookOpen, BriefcaseBusiness, CreditCard,
+  ExternalLink, Gauge, GraduationCap, Landmark, ReceiptText, ServerCog, Users, X,
 } from 'lucide-react'
 import Brand from './Brand.jsx'
+import { documentationUrl } from '../../config/documentation.js'
 
 const sections = [
   {
@@ -82,6 +83,23 @@ export default function Sidebar({ open, onClose, onOpenProjectInfo }) {
         </nav>
 
         <div className="relative mt-4 space-y-2.5 border-t border-mb-border pt-4">
+          <a
+            href={documentationUrl('documentationHome')}
+            target="_blank"
+            rel="noreferrer"
+            className="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-mb-gold/15 bg-mb-gold/[.035] px-2.5 py-2 text-left outline-none transition hover:border-mb-gold/30 hover:bg-mb-gold/[.07] focus-visible:ring-2 focus-visible:ring-mb-gold/50"
+            aria-label="Open MoniBank documentation in a new tab"
+          >
+            <span className="grid size-8.5 shrink-0 place-items-center rounded-lg border border-mb-gold/20 bg-mb-gold/[.07] text-mb-gold-light transition group-hover:border-mb-gold/35">
+              <BookOpen size={19} strokeWidth={1.8} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-semibold text-mb-text">Documentation</span>
+              <span className="block truncate text-[10px] text-mb-muted">Architecture and process guides</span>
+            </span>
+            <ExternalLink size={13} className="shrink-0 text-mb-muted/60 transition group-hover:text-mb-gold-light" aria-hidden="true" />
+          </a>
+
           <button
             type="button"
             onClick={onOpenProjectInfo}
