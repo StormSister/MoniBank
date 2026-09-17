@@ -29,12 +29,13 @@ Dzięki temu nie opisuję etykiety z interfejsu jako „danej z mainframe’u”
 | Warstwa | Zakres | Status |
 |---|---|---|
 | Mapa aplikacji | Pełna droga żądania i wyniku | Planowana |
-| Źródła dashboardu | Status, operacje, raport poprzedniego dnia i ostatnie transakcje | W trakcie |
+| Źródła dashboardu | Status, operacje, raport poprzedniego dnia i ostatnie transakcje | Dostępna |
 | Protokół bramki | `MBGW`, `MBGATE`, COMMAREA 855 bajtów i wybór programu | Dostępna |
 | Protokół wyniku | `MBR;D`, `MBR;S`, `MBR;E`, `MBRESULT` i ramki drukarki | Dostępna |
 | Listener Java | TCP, składanie ramek, korelacja requestów i timeout | Planowana |
 | Operacje biznesowe | Dodanie klienta, konta, karty, wpłaty, wypłaty i wyciągi | W trakcie |
-| Zamknięcie dnia | `POSTINT`, `DAYSTAT`, `GETSTAT` i `MBANK.DAYRPT` | Planowana |
+| Zamknięcie dnia | `POSTINT`, `DAYSTAT`, `GETSTAT` i `MBANK.DAYRPT` | Dostępna |
+| Obserwowalność na żywo | Hardcopy MVS, wyjście drukarki, SSE i projekcje w przeglądarce | Dostępna |
 | Runtime | STEVE, SOFIA, wspólna kolejka, recovery i koordynacja VSAM | Planowana |
 | Dostarczanie na MVS | Programy COBOL, copybooki, CLIST-y i joby JCL w wymaganej kolejności | Dostępna |
 | Mapa repozytorium | Kod aktywny, pomocniczy i obecnie nieużywany | Planowana |
@@ -45,6 +46,8 @@ Dzięki temu nie opisuję etykiety z interfejsu jako „danej z mainframe’u”
 - [Podsumowanie poprzedniego dnia: jak MVS tworzy i zwraca raport](./podsumowanie-poprzedniego-dnia)
 - [Ostatnie transakcje: dlaczego panel pięciu rekordów czyta pełny wynik VSAM](./ostatnie-transakcje)
 - [Szybkie akcje dashboardu: najpierw trasa, operacja dopiero po wysłaniu formularza](./szybkie-akcje)
+- [Klienci: LISTCUST, widoki lokalne, tworzenie rekordu i zmiana statusu](./klienci)
+- [Konsola mainframe na żywo: hardcopy, wyjście drukarki, SSE i widok Activity](./konsola-mainframe-live)
 - [MBGATE: wspólna bramka KICKS i routing operacji](./mbgate)
 - [MBRESULT: kanał wynikowy drukarki klasy Z](./mbresult)
 - [Instalacja na MVS: mapy, copybooki, tabele KICKS i MBKICKS](./instalacja-mvs)
@@ -60,6 +63,8 @@ Linki z frontendu powinny prowadzić do poniższych tras stron. Te slugi traktuj
 | `previous-day-close` | `/blog/pl/dokumentacja/podsumowanie-poprzedniego-dnia` | `/blog/documentation/previous-day-close-summary` |
 | `recent-transactions` | `/blog/pl/dokumentacja/ostatnie-transakcje` | `/blog/documentation/recent-transactions` |
 | `quick-actions` | `/blog/pl/dokumentacja/szybkie-akcje` | `/blog/documentation/quick-actions` |
+| `customers` | `/blog/pl/dokumentacja/klienci` | `/blog/documentation/customers` |
+| `live-console` | `/blog/pl/dokumentacja/konsola-mainframe-live` | `/blog/documentation/live-mainframe-console` |
 | `mbgate` | `/blog/pl/dokumentacja/mbgate` | `/blog/documentation/mbgate` |
 | `mbresult` | `/blog/pl/dokumentacja/mbresult` | `/blog/documentation/mbresult` |
 | `mvs-installation` | `/blog/pl/dokumentacja/instalacja-mvs` | `/blog/documentation/mvs-installation` |

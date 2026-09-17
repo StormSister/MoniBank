@@ -57,6 +57,15 @@ export const DOCUMENTATION_LINKS = Object.freeze({
     en: '/documentation/add-customer',
     pl: '/pl/dokumentacja/dodaj-klienta',
   },
+  customers: {
+    en: '/documentation/customers',
+    pl: '/pl/dokumentacja/klienci',
+    sections: {
+      list: 'list',
+      localView: 'local-view',
+      status: 'status',
+    },
+  },
   liveConsole: {
     en: '/documentation/live-mainframe-console',
     pl: '/pl/dokumentacja/konsola-mainframe-live',

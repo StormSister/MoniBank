@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useChangeCustomerStatus, useCreateCustomer, useCustomers } from '../hooks/useCustomers.js'
 import Button from '../components/ui/Button.jsx'
+import DocumentationLink from '../components/ui/DocumentationLink.jsx'
 import { Input, Select } from '../components/ui/FormField.jsx'
 import FormField from '../components/ui/FormField.jsx'
 import Modal from '../components/ui/Modal.jsx'
@@ -114,7 +115,10 @@ export default function CustomersPage() {
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-mb-text">Customers</h1>
           <p className="mt-1 text-sm text-mb-muted">Customer records maintained by the MVS core system.</p>
         </div>
-        <Button variant="primary" onClick={openCreate}><Plus size={17} /> New customer</Button>
+        <div className="flex items-center gap-2">
+          <DocumentationLink page="customers">How it works</DocumentationLink>
+          <Button variant="primary" onClick={openCreate}><Plus size={17} /> New customer</Button>
+        </div>
       </header>
 
       {successMessage && <Notice tone="success" onClose={() => setSuccessMessage('')}>{successMessage}</Notice>}

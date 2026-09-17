@@ -29,12 +29,13 @@ This prevents a UI label from being documented as if it were a mainframe fact wh
 | Layer | Scope | Status |
 |---|---|---|
 | Application map | Complete request and result paths | Planned |
-| Dashboard provenance | Status, operations, previous-day report and recent transactions | In progress |
+| Dashboard provenance | Status, operations, previous-day report and recent transactions | Available |
 | Gateway protocol | `MBGW`, `MBGATE`, 855-byte COMMAREA and operation dispatch | Available |
 | Result protocol | `MBR;D`, `MBR;S`, `MBR;E`, `MBRESULT` and physical printer frames | Available |
 | Java listener | TCP connection, frame assembly, request correlation and timeout behaviour | Planned |
 | Business workflows | Add customer, accounts, cards, deposits, withdrawals and statements | In progress |
-| Daily close | `POSTINT`, `DAYSTAT`, `GETSTAT` and `MBANK.DAYRPT` | Planned |
+| Daily close | `POSTINT`, `DAYSTAT`, `GETSTAT` and `MBANK.DAYRPT` | Available |
+| Live observability | MVS hardcopy, printer output, SSE and browser projections | Available |
 | Runtime | STEVE, SOFIA, shared queue, recovery and VSAM coordination | Planned |
 | Mainframe delivery | COBOL sources, copybooks, CLISTs and ordered JCL jobs | Available |
 | Repository map | Active, supporting and currently unused code | Planned |
@@ -45,6 +46,8 @@ This prevents a UI label from being documented as if it were a mainframe fact wh
 - [Previous-day close summary: how MVS produces and serves the report](./previous-day-close-summary)
 - [Recent transactions: why the five-row panel reads the complete VSAM result](./recent-transactions)
 - [Dashboard quick actions: routes first, business operation after submission](./quick-actions)
+- [Customers: LISTCUST, local views, record creation and status changes](./customers)
+- [Live mainframe console: hardcopy, printer output, SSE and Activity](./live-mainframe-console)
 - [MBGATE: the common KICKS gateway and operation router](./mbgate)
 - [MBRESULT: the class-Z printer result channel](./mbresult)
 - [Installing on MVS: maps, copybooks, KICKS tables and MBKICKS](./mvs-installation)
@@ -60,6 +63,8 @@ Frontend links should target the page routes below. These slugs are treated as a
 | `previous-day-close` | `/blog/documentation/previous-day-close-summary` | `/blog/pl/dokumentacja/podsumowanie-poprzedniego-dnia` |
 | `recent-transactions` | `/blog/documentation/recent-transactions` | `/blog/pl/dokumentacja/ostatnie-transakcje` |
 | `quick-actions` | `/blog/documentation/quick-actions` | `/blog/pl/dokumentacja/szybkie-akcje` |
+| `customers` | `/blog/documentation/customers` | `/blog/pl/dokumentacja/klienci` |
+| `live-console` | `/blog/documentation/live-mainframe-console` | `/blog/pl/dokumentacja/konsola-mainframe-live` |
 | `mbgate` | `/blog/documentation/mbgate` | `/blog/pl/dokumentacja/mbgate` |
 | `mbresult` | `/blog/documentation/mbresult` | `/blog/pl/dokumentacja/mbresult` |
 | `mvs-installation` | `/blog/documentation/mvs-installation` | `/blog/pl/dokumentacja/instalacja-mvs` |
