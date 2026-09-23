@@ -58,6 +58,47 @@ public class DailyCloseOrchestrator {
         }
     }
 
+    public DailyCloseReportResponse regenerateReport(
+            LocalDate businessDate,
+            String requestedCurrency
+    ) {
+        if (businessDate == null) {
+            throw new IllegalArgumentException(
+                    "Business date is required."
+            );
+        }
+
+        String currency = normalizeCurrency(requestedCurrency);
+
+        return vsamAccessCoordinator.execute(
+                "REPORT-" + businessDate,
+                "DAILYREPORT",
+                () -> {
+                    log.info(
+                            "DAILY CLOSE report regeneration started for {} {}",
+                            businessDate,
+                            currency
+                    );
+
+                    DailyCloseReportResponse report =
+                            dailyStatisticsService.calculate(
+                                    businessDate,
+                                    currency
+                            );
+
+                    reportService.cacheReport(report);
+
+                    log.info(
+                            "DAILY CLOSE report regenerated for {} {}",
+                            businessDate,
+                            currency
+                    );
+
+                    return report;
+                }
+        );
+    }
+
     private DailyCloseReportResponse executeClose(
             LocalDate businessDate,
             String currency

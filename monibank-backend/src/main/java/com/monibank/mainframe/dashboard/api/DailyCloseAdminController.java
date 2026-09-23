@@ -41,4 +41,19 @@ public class DailyCloseAdminController {
                 orchestrator.close(requestedDate, currency)
         );
     }
+
+    @PostMapping("/report")
+    public ResponseEntity<DailyCloseReportResponse> regenerateReport(
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate date,
+
+            @RequestParam(required = false)
+            @Pattern(regexp = "[A-Z]{3}")
+            String currency
+    ) {
+        return ResponseEntity.ok(
+                orchestrator.regenerateReport(date, currency)
+        );
+    }
 }
