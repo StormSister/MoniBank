@@ -3,6 +3,7 @@ package com.monibank.mainframe.dashboard;
 import com.monibank.mainframe.dashboard.api.DailyCloseReportResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DailyCloseReportService {
 
     private static final int MAX_CACHED_REPORTS = 8;
@@ -47,16 +49,31 @@ public class DailyCloseReportService {
             return cached;
         }
 
-        DailyCloseReportResponse loaded =
-                dailyStatisticsService.load(
-                        businessDate,
-                        normalizedCurrency
-                );
+        try {
+            DailyCloseReportResponse loaded =
+                    dailyStatisticsService.load(
+                            businessDate,
+                            normalizedCurrency
+                    );
 
-        cache.put(key, loaded);
-        evictOldestEntryIfNeeded();
+            cache.put(key, loaded);
+            evictOldestEntryIfNeeded();
 
-        return loaded;
+            return loaded;
+
+        } catch (DailyCloseReportNotFoundException exception) {
+
+            DailyCloseReportResponse regenerated =
+                    dailyStatisticsService.calculate(
+                            businessDate,
+                            normalizedCurrency
+                    );
+
+            cache.put(key, regenerated);
+            evictOldestEntryIfNeeded();
+
+            return regenerated;
+        }
     }
 
     public synchronized void cacheReport(
