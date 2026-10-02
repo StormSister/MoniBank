@@ -242,3 +242,13 @@ Mainframe setup jobs must be submitted manually and in dependency order. I will 
 ## Further reading
 
 I publish detailed, evidence-based notes in the [MoniBank technical blog](https://monibank.stormsister.eu/blog/). The repository already includes articles about the first customer lookup path and automated COBOL/JCL delivery. The next documentation series will describe the gateway, result protocol, worker pool, daily close and the origin of every dashboard metric directly from the corresponding source files.
+
+## License
+
+MoniBank is licensed under the Apache License 2.0.
+
+Copyright © 2026 Monika Gudalewska.  
+MoniBank was originally designed and developed by Monika Gudalewska.
+
+See [LICENSE](LICENSE) and [NOTICE](NOTICE) for details.
+
